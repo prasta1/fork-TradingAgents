@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import time
 import uuid
@@ -62,6 +63,45 @@ class ETradeAPIError(RuntimeError):
         super().__init__(f"E*TRADE API error {status}: {body}")
         self.status = status
         self.body = body
+
+
+# E*TRADE reports OAuth failures as `oauth_problem=<code>` buried in a Tomcat
+# HTML error page. Surfacing that raw is useless, and the codes are specific
+# enough to say exactly what to fix.
+_OAUTH_PROBLEMS = {
+    "signature_invalid": (
+        "E*TRADE recognised the consumer key but rejected the signature, which means "
+        f"{CONSUMER_SECRET_ENV} does not match {CONSUMER_KEY_ENV}. Re-copy the consumer "
+        "secret — a secret is only valid against the key it was issued with."
+    ),
+    "consumer_key_unknown": (
+        f"E*TRADE does not recognise {CONSUMER_KEY_ENV}. Check it was copied in full, and "
+        f"that it matches the environment in use (set {SANDBOX_ENV}=1 for a sandbox key)."
+    ),
+    "consumer_key_rejected": (
+        f"E*TRADE rejected {CONSUMER_KEY_ENV} — it is usually inactive or expired. "
+        "Request a new key from developer.etrade.com."
+    ),
+    "token_rejected": (
+        "E*TRADE rejected the request token. Start the connection again — a verification "
+        "code is single-use and expires quickly."
+    ),
+    "permission_denied": (
+        "E*TRADE denied access for this key. Confirm the API Developer Agreement and "
+        "User Intent Survey are complete."
+    ),
+}
+
+
+def _explain_oauth_error(exc: Exception) -> str:
+    """Turn an OAuth failure into something worth showing a human."""
+    text = str(exc)
+    match = re.search(r"oauth_problem=(\w+)", text)
+    if match:
+        code = match.group(1)
+        return _OAUTH_PROBLEMS.get(code, f"E*TRADE OAuth error: {code}")
+    # Not an oauth_problem page — keep it short rather than dumping HTML.
+    return f"E*TRADE authorization failed: {text[:200]}"
 
 
 class ETradeClient:
@@ -157,10 +197,15 @@ class ETradeClient:
         code that the user pastes back into :meth:`complete_authorization`.
         """
         self._require_config()
-        session = OAuth1Session(self._key, client_secret=self._secret, callback_uri="oob")
-        response = session.fetch_request_token(
-            f"{self.base}/oauth/request_token", timeout=REQUEST_TIMEOUT
+        session = OAuth1Session(
+            self._key.strip(), client_secret=self._secret.strip(), callback_uri="oob"
         )
+        try:
+            response = session.fetch_request_token(
+                f"{self.base}/oauth/request_token", timeout=REQUEST_TIMEOUT
+            )
+        except Exception as exc:
+            raise ETradeNotAuthorized(_explain_oauth_error(exc)) from exc
         with self._lock:
             self._request_token = {
                 "oauth_token": response.get("oauth_token"),
@@ -177,15 +222,18 @@ class ETradeClient:
             raise ETradeNotAuthorized("no authorization in progress — start one first")
 
         session = OAuth1Session(
-            self._key,
-            client_secret=self._secret,
+            self._key.strip(),
+            client_secret=self._secret.strip(),
             resource_owner_key=pending["oauth_token"],
             resource_owner_secret=pending["oauth_token_secret"],
             verifier=verifier.strip(),
         )
-        token = session.fetch_access_token(
-            f"{self.base}/oauth/access_token", timeout=REQUEST_TIMEOUT
-        )
+        try:
+            token = session.fetch_access_token(
+                f"{self.base}/oauth/access_token", timeout=REQUEST_TIMEOUT
+            )
+        except Exception as exc:
+            raise ETradeNotAuthorized(_explain_oauth_error(exc)) from exc
         self._save_token(
             {
                 "oauth_token": token["oauth_token"],
