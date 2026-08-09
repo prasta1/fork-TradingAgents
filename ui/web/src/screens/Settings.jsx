@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import BrokerPanel from '../components/BrokerPanel.jsx'
 import { Panel } from '../components/ui.jsx'
 import { C, MONO } from '../theme.js'
 
@@ -21,6 +22,14 @@ export default function Settings() {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 26px 40px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 860 }}>
+        <BrokerPanel
+          brokers={data.brokers}
+          active={data.active_broker}
+          onChange={(result) =>
+            setData((prev) => ({ ...prev, brokers: result.brokers, active_broker: result.active }))
+          }
+        />
+
         <Panel
           title="LLM providers"
           pad={0}

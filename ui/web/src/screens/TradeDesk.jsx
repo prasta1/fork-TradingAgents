@@ -74,14 +74,19 @@ export default function TradeDesk({ run, ticker, boot }) {
 
   useEffect(() => () => clearInterval(pollRef.current), [])
 
+  const activeBroker = (boot.brokers || []).find((b) => b.name === boot.active_broker)
+
   if (!boot.broker_connected) {
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 26px' }}>
-        <Notice title="Public.com not connected">
-          Add a secret key to your .env to enable order entry. Generate one at
-          public.com/settings/security/api.
+        <Notice title="No brokerage connected">
+          Order entry needs a connected brokerage. Public.com connects from a secret in your
+          .env; E*TRADE needs a consumer key plus a one-time authorization each day, both from
+          Settings.
           <div style={{ marginTop: 12, fontFamily: MONO, fontSize: 11.5, color: C.t5 }}>
             PUBLIC_API_SECRET=your_secret_key
+            <br />
+            ETRADE_CONSUMER_KEY=… / ETRADE_CONSUMER_SECRET=…
           </div>
         </Notice>
       </div>
@@ -121,15 +126,20 @@ export default function TradeDesk({ run, ticker, boot }) {
     setBusy(true)
     setError(null)
     try {
-      const result = await api.placeOrder(order)
+      // The preflight token proves this exact ticket was reviewed.
+      const result = await api.placeOrder(order, preflight?.token)
       setPlaced(result)
       setConfirming(false)
       setPreflight(null)
       pollRef.current = setInterval(async () => {
         try {
-          const s = await api.orderStatus(result.orderId)
+          const s = await api.orderStatus(result.order_id)
           setStatus(s)
-          if (['FILLED', 'CANCELLED', 'REJECTED', 'EXPIRED'].includes(s.status)) {
+          if (
+            ['FILLED', 'EXECUTED', 'CANCELLED', 'CANCEL_REQUESTED', 'REJECTED', 'EXPIRED'].includes(
+              s.status
+            )
+          ) {
             clearInterval(pollRef.current)
           }
         } catch {
@@ -146,7 +156,7 @@ export default function TradeDesk({ run, ticker, boot }) {
   async function cancelOrder() {
     if (!placed) return
     try {
-      await api.cancelOrder(placed.orderId)
+      await api.cancelOrder(placed.order_id)
       setStatus((s) => ({ ...(s || {}), status: 'CANCELLED' }))
       clearInterval(pollRef.current)
     } catch (err) {
@@ -225,14 +235,14 @@ export default function TradeDesk({ run, ticker, boot }) {
           >
             {quote ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                <BookCell k="BID" v={fmtNum(quote.bid)} sub={`${quote.bidSize ?? '—'} size`} color={C.green} />
-                <BookCell k="ASK" v={fmtNum(quote.ask)} sub={`${quote.askSize ?? '—'} size`} color={C.red} />
+                <BookCell k="BID" v={fmtNum(quote.bid)} sub={`${quote.bid_size ?? '—'} size`} color={C.green} />
+                <BookCell k="ASK" v={fmtNum(quote.ask)} sub={`${quote.ask_size ?? '—'} size`} color={C.red} />
                 <BookCell k="LAST" v={fmtNum(quote.last)} sub={`vol ${Number(quote.volume || 0).toLocaleString()}`} />
                 <BookCell
                   k="1D CHANGE"
-                  v={quote.oneDayChange?.percentChange ? `${Number(quote.oneDayChange.percentChange).toFixed(2)}%` : '—'}
-                  sub={quote.previousClose ? `prev ${fmtNum(quote.previousClose)}` : ''}
-                  color={Number(quote.oneDayChange?.change || 0) >= 0 ? C.green : C.red}
+                  v={quote.change_pct !== null && quote.change_pct !== undefined ? `${Number(quote.change_pct).toFixed(2)}%` : '—'}
+                  sub={quote.previous_close ? `prev ${fmtNum(quote.previous_close)}` : ''}
+                  color={Number(quote.change_pct || 0) >= 0 ? C.green : C.red}
                 />
               </div>
             ) : (
@@ -249,7 +259,25 @@ export default function TradeDesk({ run, ticker, boot }) {
           {placed && <OrderTicketStatus placed={placed} status={status} onCancel={cancelOrder} />}
         </div>
 
-        <Panel title="Order entry" pad={0} style={{ width: 340, flex: 'none' }}>
+        <Panel
+          title="Order entry"
+          pad={0}
+          style={{ width: 340, flex: 'none' }}
+          right={
+            <span
+              style={{
+                fontFamily: MONO,
+                fontSize: 10.5,
+                padding: '4px 9px',
+                borderRadius: 3,
+                background: C.greenBg,
+                color: C.green,
+              }}
+            >
+              {activeBroker?.label || boot.active_broker}
+            </span>
+          }
+        >
           <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 15 }}>
             <div
               style={{
@@ -383,17 +411,11 @@ export default function TradeDesk({ run, ticker, boot }) {
             >
               {preflight ? (
                 <>
-                  <Row k="Order value" v={fmtMoney(preflight.orderValue)} />
-                  <Row k="Commission" v={fmtMoney(preflight.estimatedCommission)} />
-                  <Row
-                    k="Regulatory fees"
-                    v={fmtMoney(
-                      Number(preflight.regulatoryFees?.secFee || 0) +
-                        Number(preflight.regulatoryFees?.tafFee || 0)
-                    )}
-                  />
-                  <Row k="Est. quantity" v={preflight.estimatedQuantity ?? '—'} />
-                  <Row k="Total cost" v={fmtMoney(preflight.estimatedCost)} bold />
+                  <Row k="Order value" v={fmtMoney(preflight.order_value)} />
+                  <Row k="Commission" v={fmtMoney(preflight.commission)} />
+                  <Row k="Regulatory fees" v={fmtMoney(preflight.fees)} />
+                  <Row k="Est. quantity" v={preflight.estimated_quantity ?? '—'} />
+                  <Row k="Total cost" v={fmtMoney(preflight.estimated_cost)} bold />
                 </>
               ) : (
                 <span style={{ fontFamily: MONO, fontSize: 11, color: C.t7, lineHeight: 1.6 }}>
@@ -446,7 +468,8 @@ export default function TradeDesk({ run, ticker, boot }) {
                     {quantity} {order.symbol}
                   </strong>{' '}
                   {orderType === 'LIMIT' ? `at ${fmtMoney(limitPrice)}` : `at ${orderType.toLowerCase()}`}?
-                  This places money at risk in your live Public.com account.
+                  This places money at risk in your live{' '}
+                  <strong>{activeBroker?.label || boot.active_broker}</strong> account.
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Btn onClick={place} disabled={busy} style={{ flex: 1, padding: 10, fontSize: 12.5 }}>
@@ -506,10 +529,15 @@ function Row({ k, v, bold, muted }) {
 
 function OrderTicketStatus({ placed, status, onCancel }) {
   const state = status?.status || 'SUBMITTED'
-  const done = ['FILLED', 'CANCELLED', 'REJECTED', 'EXPIRED'].includes(state)
-  const color = state === 'FILLED' ? C.green : state === 'REJECTED' ? C.red : C.amber
+  const done = ['FILLED', 'EXECUTED', 'CANCELLED', 'REJECTED', 'EXPIRED'].includes(state)
+  const color =
+    state === 'FILLED' || state === 'EXECUTED'
+      ? C.green
+      : state === 'REJECTED'
+        ? C.red
+        : C.amber
   return (
-    <Panel title="Submitted order" meta={placed.orderId}>
+    <Panel title="Submitted order" meta={placed.order_id}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 26, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span
@@ -527,8 +555,8 @@ function OrderTicketStatus({ placed, status, onCancel }) {
           <>
             <Proposed k="SIDE" v={status.side || '—'} />
             <Proposed k="QUANTITY" v={status.quantity || '—'} />
-            <Proposed k="FILLED" v={status.filledQuantity ?? '0'} />
-            <Proposed k="AVG PRICE" v={status.averagePrice ? fmtMoney(status.averagePrice) : '—'} />
+            <Proposed k="FILLED" v={status.filled_quantity ?? '0'} />
+            <Proposed k="AVG PRICE" v={status.average_price ? fmtMoney(status.average_price) : '—'} />
           </>
         )}
         {!done && (

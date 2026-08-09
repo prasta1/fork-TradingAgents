@@ -59,10 +59,16 @@ export const api = {
 
   tradeQuotes: (symbols) => post('/trade/quotes', { symbols }),
   preflight: (order) => post('/trade/preflight', order),
-  placeOrder: (order) => post('/trade/order', order),
+  // `token` comes from preflight — E*TRADE will not place without it.
+  placeOrder: (order, token) => post('/trade/order', { order, token }),
   orderStatus: (id) => get(`/trade/order/${id}`),
   cancelOrder: (id) => del(`/trade/order/${id}`),
-  account: () => get('/trade/account'),
+
+  brokers: () => get('/brokers'),
+  setBroker: (name) => post('/brokers/active', { name }),
+  etradeAuthorize: () => post('/brokers/etrade/authorize'),
+  etradeVerify: (verifier) => post('/brokers/etrade/verify', { verifier }),
+  etradeDisconnect: () => post('/brokers/etrade/disconnect'),
 }
 
 /**

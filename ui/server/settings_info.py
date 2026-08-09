@@ -38,6 +38,8 @@ DATA_KEYS = [
     ("Alpha Vantage", "ALPHA_VANTAGE_API_KEY"),
     ("FRED", "FRED_API_KEY"),
     ("Public.com", "PUBLIC_API_SECRET"),
+    ("E*TRADE key", "ETRADE_CONSUMER_KEY"),
+    ("E*TRADE secret", "ETRADE_CONSUMER_SECRET"),
 ]
 
 

@@ -80,19 +80,55 @@ in the right rail when the graph reaches the end.
 
 ## Brokerage (optional)
 
-Dashboard and Trade desk read your live [Public.com](https://public.com/api/docs)
-account. Generate a secret key at `public.com/settings/security/api` and add it to
-`.env`:
+Dashboard and Trade desk read and trade a real brokerage account. Two are
+supported; pick the active one under **Settings → Brokerage**.
+
+All credentials go in `.env` at the repo root — there is deliberately no field in
+the UI for them, because both providers' secrets must never reach client-side
+code. Restart the server after editing.
+
+### Public.com
+
+Generate a secret key at [public.com/settings/security/api](https://public.com/settings/security/api):
 
 ```bash
 PUBLIC_API_SECRET=your_secret_key
 # PUBLIC_ACCOUNT_ID=...   # optional; the first brokerage account is used otherwise
 ```
 
-The secret stays server-side — the browser only ever sees results of calls made
-with it. Orders always require a preflight and a second explicit confirmation; an
-agent decision only pre-fills the ticket, it never submits anything. Without a key
-those two screens say so and the rest of the console works normally.
+That's the whole setup — the server exchanges the secret for a short-lived access
+token on its own.
+
+### E\*TRADE
+
+Request a key at [developer.etrade.com](https://developer.etrade.com/getting-started).
+An **individual** key (tied to your own login) is issued immediately once you
+complete the API Developer Agreement and User Intent Survey.
+
+```bash
+ETRADE_CONSUMER_KEY=your_consumer_key
+ETRADE_CONSUMER_SECRET=your_consumer_secret
+# ETRADE_SANDBOX=1   # use apisb.etrade.com with your sandbox key
+```
+
+E\*TRADE additionally needs a **one-time authorization each day**, because its
+OAuth 1.0a tokens expire at midnight US/Eastern. Go to **Settings → Brokerage →
+Connect**: the console gives you an E\*TRADE link, you sign in there, and you
+paste back the verification code E\*TRADE displays. Your E\*TRADE credentials
+never touch this app. The token is cached at `~/.tradingagents/etrade_token.json`
+(mode 600) so a server restart doesn't force you to redo it.
+
+### Order safety
+
+Both brokers use the same two-step flow: **Review order** runs a preflight (which
+places nothing), and only then can you **Place order**, which asks for one more
+explicit confirmation naming the brokerage. Editing any field invalidates the
+review. An agent decision only pre-fills the ticket — nothing is ever submitted
+automatically. E\*TRADE enforces this server-side too: it will not accept an order
+without the `previewId` from a preview.
+
+Without credentials those two screens say so, and the rest of the console works
+normally.
 
 ## What the agents do
 

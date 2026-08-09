@@ -49,6 +49,7 @@ bedrock = [
 console = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
+    "requests-oauthlib>=2.0",   # E*TRADE speaks OAuth 1.0a
 ]
 
 [project.scripts]

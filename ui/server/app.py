@@ -4,8 +4,9 @@ Serves the built React console and the JSON/SSE API behind it. Run with::
 
     uvicorn ui.server.app:app --port 8551
 
-Brokerage credentials stay on this side of the wire: the browser never sees the
-Public.com secret, only the results of calls made with it.
+Brokerage credentials stay on this side of the wire: the browser never sees a
+Public.com secret or an E*TRADE consumer secret, only the results of calls made
+with them.
 """
 
 from __future__ import annotations
@@ -24,14 +25,14 @@ from pydantic import BaseModel, Field
 from tradingagents.command_center.portfolio_store import PortfolioStore
 
 from . import history, market, portfolio, runs, settings_info
-from .public_client import PublicAPIError, PublicClient, PublicNotConfigured
+from .brokers import BrokerError, BrokerRegistry
 
 load_dotenv()
 
 app = FastAPI(title="TradingAgents Console", version="0.3.1")
 
 manager = runs.RunManager()
-public = PublicClient()
+brokers = BrokerRegistry()
 store = PortfolioStore()
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -62,29 +63,20 @@ class OrderRequest(BaseModel):
     limit_price: str | None = None
     stop_price: str | None = None
     time_in_force: str = "DAY"
-    instrument_type: str = "EQUITY"
-
-    def to_kwargs(self) -> dict:
-        return {
-            "symbol": self.symbol,
-            "side": self.side,
-            "quantity": self.quantity,
-            "order_type": self.order_type,
-            "limit_price": self.limit_price,
-            "stop_price": self.stop_price,
-            "time_in_force": self.time_in_force,
-            "instrument_type": self.instrument_type,
-        }
 
 
-def _broker(fn, *args, **kwargs):
-    """Call Public.com, mapping its failure modes onto clean HTTP errors."""
+class PlaceRequest(BaseModel):
+    order: OrderRequest
+    # Handle issued by preflight. E*TRADE will not place without it.
+    token: dict | None = None
+
+
+def _call(fn, *args, **kwargs):
+    """Run a broker call, mapping its failure modes onto clean HTTP errors."""
     try:
         return fn(*args, **kwargs)
-    except PublicNotConfigured as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except PublicAPIError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except BrokerError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
 
 
 # -- bootstrap ------------------------------------------------------------
@@ -109,7 +101,9 @@ def bootstrap():
             {"key": "fundamentals", "label": "Fundamentals Analyst", "desc": "Financials, margins, valuation"},
         ],
         "trade_date": runs.default_trade_date(),
-        "broker_connected": public.configured,
+        "brokers": brokers.status(),
+        "active_broker": brokers.active_name,
+        "broker_connected": brokers.active.connected,
         "active_run": active.snapshot() if active else None,
     }
 
@@ -121,8 +115,54 @@ def get_settings():
         "data_credentials": settings_info.data_credentials(),
         "vendors": settings_info.vendors(),
         "paths": settings_info.paths(),
-        "broker_connected": public.configured,
+        "brokers": brokers.status(),
+        "active_broker": brokers.active_name,
     }
+
+
+# -- brokers --------------------------------------------------------------
+
+
+@app.get("/api/brokers")
+def list_brokers():
+    return {"brokers": brokers.status(), "active": brokers.active_name}
+
+
+@app.post("/api/brokers/active")
+def set_active_broker(name: str = Body(..., embed=True)):
+    _call(brokers.set_active, name)
+    return {"brokers": brokers.status(), "active": brokers.active_name}
+
+
+@app.post("/api/brokers/etrade/authorize")
+def etrade_authorize():
+    """Begin E*TRADE OAuth: returns the URL the user must visit.
+
+    E*TRADE authorizes out-of-band — the page shows a verification code the
+    user pastes back into /verify. The server never sees their credentials.
+    """
+    client = brokers.get("etrade").client
+    try:
+        return {"authorize_url": client.start_authorization()}
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/brokers/etrade/verify")
+def etrade_verify(verifier: str = Body(..., embed=True)):
+    """Complete E*TRADE OAuth with the verification code from the browser."""
+    client = brokers.get("etrade").client
+    try:
+        client.complete_authorization(verifier)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"brokers": brokers.status(), "active": brokers.active_name}
+
+
+@app.post("/api/brokers/etrade/disconnect")
+def etrade_disconnect():
+    brokers.get("etrade").client.disconnect()
+    return {"brokers": brokers.status(), "active": brokers.active_name}
 
 
 # -- runs -----------------------------------------------------------------
@@ -212,7 +252,7 @@ def get_history():
 
 @app.get("/api/portfolio")
 def get_portfolio():
-    return _broker(portfolio.dashboard, public)
+    return _call(portfolio.dashboard, brokers.active)
 
 
 @app.get("/api/portfolio/headlines")
@@ -239,18 +279,16 @@ def get_quote(ticker: str):
 def get_watchlist():
     symbols = store.get_watchlist()
     quotes = {}
-    if symbols and public.configured:
+    if symbols and brokers.active.connected:
         try:
-            quotes = public.quotes(symbols)
-        except (PublicNotConfigured, PublicAPIError):
+            quotes = brokers.active.quotes(symbols)
+        except BrokerError:
             quotes = {}
     return [
         {
             "sym": s,
             "last": (quotes.get(s) or {}).get("last"),
-            "change_pct": ((quotes.get(s) or {}).get("oneDayChange") or {}).get(
-                "percentChange"
-            ),
+            "change_pct": (quotes.get(s) or {}).get("change_pct"),
         }
         for s in symbols
     ]
@@ -274,40 +312,39 @@ def remove_watchlist(symbol: str):
 @app.post("/api/trade/quotes")
 def trade_quotes(symbols: list[str] = Body(..., embed=True)):
     """Top-of-book bid/ask for the order ticket."""
-    return _broker(public.quotes, symbols)
+    return _call(brokers.active.quotes, symbols)
 
 
 @app.post("/api/trade/preflight")
 def trade_preflight(order: OrderRequest):
-    """Validate and cost an order. Places nothing."""
-    return _broker(public.preflight, **order.to_kwargs())
+    """Validate and cost an order. Places nothing.
+
+    Returns a ``token`` that :func:`trade_order` requires, so an order can
+    never be submitted without having been reviewed first.
+    """
+    return _call(brokers.active.preflight, order.model_dump())
 
 
 @app.post("/api/trade/order")
-def trade_order(order: OrderRequest):
-    """Submit a real order to Public.com.
+def trade_order(request: PlaceRequest):
+    """Submit a real order to the active brokerage.
 
     The console always runs a preflight first and requires an explicit second
     confirmation before calling this — an agent decision never reaches here on
     its own.
     """
-    return _broker(public.place_order, **order.to_kwargs())
+    return _call(brokers.active.place, request.order.model_dump(), request.token)
 
 
 @app.get("/api/trade/order/{order_id}")
 def trade_order_status(order_id: str):
-    return _broker(public.order_status, order_id)
+    return _call(brokers.active.order_status, order_id)
 
 
 @app.delete("/api/trade/order/{order_id}")
 def trade_cancel(order_id: str):
-    _broker(public.cancel_order, order_id)
+    _call(brokers.active.cancel, order_id)
     return {"status": "cancelled"}
-
-
-@app.get("/api/trade/account")
-def trade_account():
-    return {"accounts": _broker(public.accounts)}
 
 
 # -- static ---------------------------------------------------------------
