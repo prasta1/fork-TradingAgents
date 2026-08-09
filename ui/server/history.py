@@ -8,6 +8,8 @@ written reflection. The console's Run history screen is a view onto that file.
 
 from __future__ import annotations
 
+import re
+
 from tradingagents.agents.utils.memory import TradingMemoryLog
 from tradingagents.default_config import DEFAULT_CONFIG
 
@@ -64,19 +66,51 @@ def latest_by_ticker(config: dict | None = None) -> dict[str, dict]:
     return latest
 
 
+def _plain(text: str) -> str:
+    """Flatten agent markdown to a single line of prose.
+
+    The dashboard card is one line of plain text, but a stored decision is full
+    markdown that opens with headings like ``**Rating**:`` — printing it raw
+    leaks the asterisks into the UI.
+    """
+    text = re.sub(r"^\s*#{1,6}\s*", "", text, flags=re.MULTILINE)
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = text.replace("*", "").replace("`", "")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _summarise(entry: dict) -> str:
+    """The most informative one-liner available for an entry.
+
+    A resolved entry has a reflection, which is the point of the log. A pending
+    one only has the decision, where the Executive Summary is the useful part —
+    not the rating, which is already displayed beside it.
+    """
+    if entry["reflection"]:
+        source = entry["reflection"]
+    else:
+        decision = entry["decision"]
+        summary = re.search(
+            r"\*\*Executive Summary\*\*:?\s*(.+?)(?=\n\s*\*\*|\Z)",
+            decision,
+            re.IGNORECASE | re.DOTALL,
+        )
+        source = summary.group(1) if summary else decision
+
+    plain = _plain(source)
+    # First sentence, but never cut so early it says nothing.
+    first = plain.split(". ")[0]
+    return (first if len(first) > 40 else plain)[:140]
+
+
 def recent_decisions(limit: int = 4, config: dict | None = None) -> list[dict]:
     """Newest decisions for the dashboard's sidebar card."""
-    out = []
-    for entry in entries(config)[:limit]:
-        # First sentence of the reflection, or of the decision when still pending.
-        note = entry["reflection"] or entry["decision"]
-        note = note.strip().split(". ")[0][:120] if note else ""
-        out.append(
-            {
-                "sym": entry["ticker"],
-                "rating": entry["rating"],
-                "when": entry["date"],
-                "note": note,
-            }
-        )
-    return out
+    return [
+        {
+            "sym": entry["ticker"],
+            "rating": entry["rating"],
+            "when": entry["date"],
+            "note": _summarise(entry),
+        }
+        for entry in entries(config)[:limit]
+    ]

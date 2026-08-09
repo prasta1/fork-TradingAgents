@@ -230,36 +230,67 @@ def ticker_headline(ticker: str) -> dict | None:
     return None
 
 
+# Macro themes worth a chip on a trading dashboard. Ranking Polymarket by raw
+# volume instead surfaces sports, which dominate the exchange and say nothing
+# about markets.
+PREDICTION_TOPICS = [
+    "Fed interest rate decision",
+    "recession",
+    "inflation",
+]
+
+
+def _yes_probability(market: dict) -> int | None:
+    """Implied probability of the ``Yes`` outcome, as a whole percent."""
+    outcomes = _parse_json_list(market.get("outcomes"))
+    prices = _parse_json_list(market.get("outcomePrices"))
+    if not outcomes or not prices:
+        return None
+    try:
+        yes_idx = next((i for i, o in enumerate(outcomes) if str(o).lower() == "yes"), 0)
+        return round(float(prices[yes_idx]) * 100)
+    except (ValueError, IndexError, TypeError):
+        return None
+
+
 @cached(ttl=900)
 def prediction_markets(limit: int = 3) -> list[dict]:
-    """Top forward-looking Polymarket probabilities, as label + percentage."""
-    try:
-        markets = _request(
-            "markets",
-            {"closed": "false", "order": "volume", "ascending": "false", "limit": 40},
-        )
-    except Exception:
-        return []
+    """Forward-looking Polymarket odds on macro themes, as label + percentage.
 
+    One chip per theme — the deepest market matching it — so the row stays
+    stable rather than churning with whatever is trending.
+    """
     now = datetime.now(timezone.utc)
     out = []
-    for market in markets if isinstance(markets, list) else []:
-        if not _is_forward_looking(market, now):
-            continue
-        outcomes = _parse_json_list(market.get("outcomes"))
-        prices = _parse_json_list(market.get("outcomePrices"))
-        if not outcomes or not prices:
-            continue
+
+    for topic in PREDICTION_TOPICS[:limit]:
         try:
-            yes_idx = next(
-                (i for i, o in enumerate(outcomes) if str(o).lower() == "yes"), 0
-            )
-            pct = round(float(prices[yes_idx]) * 100)
-        except (ValueError, IndexError, TypeError):
+            data = _request("public-search", {"q": topic, "limit_per_type": 20})
+        except Exception:
             continue
-        out.append({"k": market.get("question", "")[:60], "v": f"{pct}%", "pct": pct})
-        if len(out) >= limit:
+
+        candidates = [
+            m
+            for event in data.get("events", []) or []
+            for m in event.get("markets", []) or []
+            if _is_forward_looking(m, now)
+        ]
+        candidates.sort(key=lambda m: m.get("volumeNum") or 0, reverse=True)
+
+        for market in candidates:
+            pct = _yes_probability(market)
+            if pct is None:
+                continue
+            question = market.get("question", "").strip()
+            out.append(
+                {
+                    "k": question[:58] + ("…" if len(question) > 58 else ""),
+                    "v": f"{pct}%",
+                    "pct": pct,
+                }
+            )
             break
+
     return out
 
 
