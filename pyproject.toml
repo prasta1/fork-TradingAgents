@@ -44,6 +44,12 @@ dev = [
 bedrock = [
     "langchain-aws>=1.5.0",
 ]
+# Web console (ui/server + ui/web). Optional so CLI-only installs stay lean:
+# pip install "tradingagents[console]".
+console = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
 
 [project.scripts]
 tradingagents = "cli.main:app"
@@ -81,6 +87,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]   # intentional re-exports
+# FastAPI's dependency-injection markers (Body/Query/Depends) are called in
+# argument defaults by design; B008 does not apply to them.
+"ui/server/app.py" = ["B008"]
 
 [tool.ruff.lint.isort]
 # Keep multiple aliased names from one module in a single combined import block

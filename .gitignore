@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Web console front-end (ui/web) — dist/ is covered by the packaging rules below
+node_modules/
+.vite/
+
 # C extensions
 *.so
 
