@@ -39,7 +39,19 @@ cd ui/web && npm install && npm run build && cd ../..
 ### 3. Start the console
 
 ```bash
-uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
+.venv/bin/uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
+```
+
+Call `uvicorn` by its venv path rather than bare. Homebrew also ships one at
+`/opt/homebrew/bin/uvicorn` on a different Python, and if that wins on `$PATH`
+you get `ModuleNotFoundError: No module named 'dotenv'` — it has uvicorn but
+none of this project's dependencies.
+
+If it fails with **address already in use**, something is already on 8551:
+
+```bash
+lsof -nP -iTCP:8551 -sTCP:LISTEN     # see what
+kill <pid>
 ```
 
 Then open:

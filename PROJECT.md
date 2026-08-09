@@ -44,8 +44,11 @@ cd /Users/prasta/Projects/Trading/TradingAgents
 # first time, or after front-end changes
 cd ui/web && npm install && npm run build && cd ../..
 
-uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
+.venv/bin/uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
 ```
+
+Use the venv path, not a bare `uvicorn` — Homebrew ships one on a different
+Python that lacks this project's dependencies.
 
 ### 3. Access from any device
 
