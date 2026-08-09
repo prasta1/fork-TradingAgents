@@ -92,8 +92,13 @@ def _broker(fn, *args, **kwargs):
 
 @app.get("/api/bootstrap")
 def bootstrap():
-    """Everything the console needs on first paint."""
-    active = manager.active
+    """Everything the console needs on first paint.
+
+    Falls back to the most recent finished run when nothing is executing, so
+    reloading the page after a run does not lose it from the console.
+    """
+    recent = manager.recent()
+    active = manager.active or (recent[0] if recent else None)
     return {
         "version": app.version,
         "defaults": settings_info.runtime_defaults(),

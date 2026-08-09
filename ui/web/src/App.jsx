@@ -52,6 +52,9 @@ export default function App() {
         if (data.active_run) {
           runCtl.attach(data.active_run.run_id)
           setTicker(data.active_run.request.ticker)
+          // Land on Live run only while something is executing; a finished run
+          // is restored but should not hijack the landing screen.
+          if (data.active_run.status !== 'running') setScreen('portfolio')
         } else {
           setScreen('portfolio')
         }
