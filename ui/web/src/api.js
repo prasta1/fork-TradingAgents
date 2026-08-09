@@ -46,6 +46,13 @@ export const api = {
 
   history: () => get('/history'),
 
+  models: (provider, backendUrl) =>
+    get(
+      `/models?provider=${encodeURIComponent(provider || '')}&backend_url=${encodeURIComponent(
+        backendUrl || ''
+      )}`
+    ),
+
   portfolio: () => get('/portfolio'),
   positionHeadlines: (symbols) =>
     get(`/portfolio/headlines?symbols=${encodeURIComponent(symbols.join(','))}`),

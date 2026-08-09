@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from tradingagents.command_center.portfolio_store import PortfolioStore
 
-from . import history, market, portfolio, runs, settings_info
+from . import history, market, models, portfolio, runs, settings_info
 from .brokers import BrokerError, BrokerRegistry
 
 load_dotenv()
@@ -106,6 +106,16 @@ def bootstrap():
         "broker_connected": brokers.active.connected,
         "active_run": active.snapshot() if active else None,
     }
+
+
+@app.get("/api/models")
+def get_models(provider: str = Query(""), backend_url: str = Query("")):
+    """Model options for the Deploy pickers.
+
+    Live from the endpoint when one is configured (llama-swap reports which
+    models are resident), otherwise from the shared model catalog.
+    """
+    return models.list_models(provider, backend_url or None)
 
 
 @app.get("/api/settings")

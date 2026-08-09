@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../api.js'
+import ModelPicker from '../components/ModelPicker.jsx'
 import { Btn, Field, L9, Notice, Panel, inputStyle, readonlyStyle } from '../components/ui.jsx'
 import { C, MONO, label95 } from '../theme.js'
 
@@ -49,9 +50,29 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
+  const [models, setModels] = useState({ deep: [], quick: [], source: null, error: null })
+  const [modelsLoading, setModelsLoading] = useState(false)
+
   useEffect(() => {
     api.settings().then((s) => setProviders(s.providers)).catch(() => setProviders([]))
   }, [])
+
+  const loadModels = useCallback(() => {
+    setModelsLoading(true)
+    api
+      .models(provider, backendUrl)
+      .then(setModels)
+      .catch((err) =>
+        setModels({ deep: [], quick: [], source: null, error: err.detail || err.message })
+      )
+      .finally(() => setModelsLoading(false))
+  }, [provider, backendUrl])
+
+  // Debounced: backendUrl is a text field, so this fires while typing.
+  useEffect(() => {
+    const id = setTimeout(loadModels, 400)
+    return () => clearTimeout(id)
+  }, [loadModels])
 
   const assetType = detectAssetType(ticker)
 
@@ -295,21 +316,27 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <Field label="DEEP THINK LLM" hint="Research Manager · Portfolio Manager">
-                <input
-                  value={deepModel}
-                  onChange={(e) => setDeepModel(e.target.value)}
-                  style={inputStyle}
-                />
-              </Field>
-              <Field label="QUICK THINK LLM" hint="Analysts · researchers · trader">
-                <input
-                  value={quickModel}
-                  onChange={(e) => setQuickModel(e.target.value)}
-                  style={inputStyle}
-                />
-              </Field>
+              <ModelPicker
+                label="DEEP THINK LLM"
+                hint="Research Manager · Portfolio Manager"
+                value={deepModel}
+                onChange={setDeepModel}
+                options={models.deep}
+              />
+              <ModelPicker
+                label="QUICK THINK LLM"
+                hint="Analysts · researchers · trader"
+                value={quickModel}
+                onChange={setQuickModel}
+                options={models.quick}
+              />
             </div>
+
+            <ModelSourceLine
+              models={models}
+              loading={modelsLoading}
+              onRefresh={loadModels}
+            />
 
             <Field label="BACKEND URL" hint="Leave empty to use the provider default">
               <input
@@ -462,6 +489,58 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
 
 function providerOk(providers, key) {
   return providers.find((p) => p.provider === key)?.ok ?? false
+}
+
+/** Where the model list came from, and a way to re-query it. */
+function ModelSourceLine({ models, loading, onRefresh }) {
+  const count = models.deep?.length ?? 0
+  let text
+  if (loading) text = 'querying endpoint…'
+  else if (models.error) text = models.error
+  else if (models.source === 'live') text = `${count} models · ${models.endpoint}`
+  else if (models.source === 'catalog') text = `${count} models · shared catalog`
+  else text = 'no model list for this provider — type an id'
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        paddingTop: 12,
+        borderTop: `1px solid ${C.border}`,
+      }}
+    >
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 9999,
+          flex: 'none',
+          background: models.error ? C.red : models.source === 'live' ? C.green : C.t8,
+        }}
+      />
+      <span
+        style={{
+          flex: 1,
+          fontFamily: MONO,
+          fontSize: 10.5,
+          color: models.error ? C.red : C.t6,
+          wordBreak: 'break-all',
+        }}
+      >
+        {text}
+      </span>
+      <button
+        className="link-hover"
+        onClick={onRefresh}
+        disabled={loading}
+        style={{ fontSize: 11.5, color: C.link, cursor: loading ? 'default' : 'pointer' }}
+      >
+        Refresh
+      </button>
+    </div>
+  )
 }
 
 function Estimate({ k, v }) {
