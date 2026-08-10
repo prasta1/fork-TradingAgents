@@ -10,7 +10,7 @@ Built on the [TradingAgents](https://github.com/TauricWar/TradingAgents) open-so
 ┌─────────────────────┐   HTTPS (9292) ───┐      ┌──────────────┐
 │  Mac Studio         │                   │      │  MacBook Pro │
 │  LLM inference      │◄── tailnet ───────┼─────►│  Console    │
-│  gemma-4-12b, etc   │                   │ http │  UI: 8551    │
+│  studio-* models    │                   │ http │  UI: 8551    │
 └─────────────────────┘                   │      └──────────────┘
                                           │      ┌──────────────┐
 ┌─────────────────────┐  HTTP (8999)     │      │  llama-swap │
@@ -111,8 +111,12 @@ The dashboard (`/api/status`) provides enriched data:
 
 ### Current model inventory
 
-- **Studio** (10 configured): bge-m3 (loaded), bge-small, devstral-24b, gemma-4-12b, gemma-4-26b, glm-4.6v-flash, ministral-14b, nemotron-30b-omni, qwen3-coder-next, qwen3.6-27b
-- **MBP** (5 configured): devstral-24b, gemma-4-12b, gemma-4-31b, nemotron-4b, smollm3-3b
+Model ids are host-prefixed so the two backends can be listed side by side without colliding.
+
+- **Studio** (10 configured): studio-bge-m3-1024, studio-bge-small-384, studio-devstral-24b, studio-gemma-4-12b, studio-gemma-4-26b-moe, studio-glm-4-6-vision, studio-ministral-14b, studio-nemotron-30b-omni, studio-qwen3-coder-next, studio-qwen3-6-27b
+- **MBP** (5 configured): macbook-devstral-24b, macbook-gemma-4-12b, macbook-gemma-4-31b, macbook-nemotron-4b, macbook-smollm3-3b
+
+Both hosts still carry `aliases` mapping the old un-prefixed ids, as a temporary migration bridge.
 
 ---
 

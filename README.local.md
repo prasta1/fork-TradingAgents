@@ -8,7 +8,7 @@ Multi-agent LLM financial trading framework running entirely on local hardware �
 ┌─────────────────┐    HTTPS (9292) ───┐         ┌──────────┐
 │  Mac Studio     │                   │         │  MBP     │
 │  llama-swap     │◄── tailnet ───────┼────────►│  Console │
-│  gemma-4-12b    │                   │  http   │  :8551   │
+│  studio-* models│                   │  http   │  :8551   │
 └─────────────────┘                   │         └──────────┘
                                       │
 ┌─────────────────┐    HTTP (8999)     │
@@ -19,7 +19,8 @@ Multi-agent LLM financial trading framework running entirely on local hardware �
 
 - **Studio** runs `llama-swap` on port 9292 (HTTPS via `studio.taile85139.ts.net`)
 - **MBP** (this machine) runs the web console, which proxies LLM calls to the Studio over Tailscale
-- The model (`gemma-4-12b`) spins up on-demand when an analysis starts
+- The configured model (`studio-qwen3-6-27b`) is in the Studio's `primary` group — it stays loaded rather than swapping out
+- Model ids are host-prefixed (`studio-*` / `macbook-*`) so a frontend listing both backends can't collide on a shared name
 
 ## Quick Start
 
@@ -180,13 +181,16 @@ The `.env` file controls which LLM the agents use:
 
 ```bash
 TRADINGAGENTS_LLM_PROVIDER=openai_compatible
-TRADINGAGENTS_DEEP_THINK_LLM=gemma-4-12b
-TRADINGAGENTS_QUICK_THINK_LLM=gemma-4-12b
-TRADINGAGENTS_LLM_BACKEND_URL=https://studio.taile85139.ts.net:9292/v1
+TRADINGAGENTS_DEEP_THINK_LLM=studio-qwen3-6-27b
+TRADINGAGENTS_QUICK_THINK_LLM=studio-qwen3-6-27b
+TRADINGAGENTS_LLM_BACKEND_URL=http://100.89.133.43:9293/v1
 TRADINGAGENTS_TEMPERATURE=0.2
 ```
 
-To use a different model (e.g., Qwen 27B, Devstral), update the deep/quick model names. The llama-swap endpoints support: `gemma-4-12b`, `gemma-4-26b`, `gemma-4-31b`, `devstral-24b`, `qwen3-coder-next`, `qwen3.6-27b`, `nemotron-30b-omni`, `glm-4.6v-flash`, `ministral-14b`.
+To use a different model, update the deep/quick model names. Ids are host-prefixed — pick one that matches the backend URL above.
+
+- **Studio** (`:9293`): `studio-qwen3-6-27b`, `studio-qwen3-coder-next`, `studio-devstral-24b`, `studio-gemma-4-12b`, `studio-gemma-4-26b-moe`, `studio-glm-4-6-vision`, `studio-ministral-14b`, `studio-nemotron-30b-omni`
+- **MBP** (`:8999`): `macbook-gemma-4-12b`, `macbook-gemma-4-31b`, `macbook-devstral-24b`, `macbook-nemotron-4b`, `macbook-smollm3-3b`
 
 ## File layout
 
