@@ -9,12 +9,13 @@ import LiveRun from './screens/LiveRun.jsx'
 import Portfolio from './screens/Portfolio.jsx'
 import ResearchHub from './screens/ResearchHub.jsx'
 import RunHistory from './screens/RunHistory.jsx'
+import Scorecard from './screens/Scorecard.jsx'
 import Settings from './screens/Settings.jsx'
 import Strategy from './screens/Strategy.jsx'
 import TradeDesk from './screens/TradeDesk.jsx'
 
 const NAV = [
-  { title: 'PORTFOLIO', items: [['portfolio', 'Dashboard'], ['trade', 'Trade desk']] },
+  { title: 'PORTFOLIO', items: [['portfolio', 'Dashboard'], ['scorecard', 'Scorecard'], ['trade', 'Trade desk']] },
   { title: 'RESEARCH', items: [['research', 'Research hub'], ['debate', 'Debate room']] },
   {
     title: 'AGENTS',
@@ -25,6 +26,7 @@ const NAV = [
 
 const TITLES = {
   portfolio: ['Portfolio', 'positions the agents trade against'],
+  scorecard: ['Scorecard', 'Wealthfront trades vs agent ratings'],
   trade: ['Trade desk', 'order entry · Public.com'],
   research: ['Research hub', 'analyst intelligence'],
   debate: ['Debate room', 'bull vs bear · research manager'],
@@ -95,6 +97,7 @@ export default function App() {
 
   const screens = {
     portfolio: <Portfolio {...shared} />,
+    scorecard: <Scorecard {...shared} />,
     trade: <TradeDesk {...shared} />,
     research: <ResearchHub {...shared} />,
     debate: <DebateRoom {...shared} />,

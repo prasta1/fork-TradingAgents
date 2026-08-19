@@ -177,16 +177,15 @@ def sparkline(ticker: str, days: int = 30) -> dict:
 
 @cached(ttl=600)
 def macro_news(limit: int = 5) -> list[dict]:
-    """Headline per macro theme for the dashboard's macro strip."""
-    themes = [
-        ("RATES", "Federal Reserve interest rates inflation"),
-        ("EARNINGS", "S&P 500 earnings outlook"),
-        ("GEOPOLITICAL", "geopolitical risk trade war sanctions"),
-        ("CENTRAL BANKS", "ECB Bank of England BOJ policy"),
-        ("COMMODITIES", "oil commodities energy supply"),
-    ]
+    """Headline per macro theme for the dashboard's macro strip.
+
+    Filters to articles published within the last ``NEWS_FRESHNESS_DAYS``
+    (default 7) so the strip surfaces current headlines rather than stale
+    search results that Yahoo ranks first regardless of age.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(days=NEWS_FRESHNESS_DAYS)
     out = []
-    for tag, query in themes[:limit]:
+    for tag, query in MACRO_THEMES[:limit]:
         try:
             results = yf.Search(query, news_count=3).news or []
         except Exception:
@@ -194,6 +193,8 @@ def macro_news(limit: int = 5) -> list[dict]:
         for raw in results:
             article = _extract_article_data(raw)
             if not article.get("title"):
+                continue
+            if not article.get("pub_date") or article["pub_date"] < cutoff:
                 continue
             out.append(
                 {
@@ -233,6 +234,19 @@ def ticker_headline(ticker: str) -> dict | None:
 # Macro themes worth a chip on a trading dashboard. Ranking Polymarket by raw
 # volume instead surfaces sports, which dominate the exchange and say nothing
 # about markets.
+MACRO_THEMES = [
+    ("RATES", "Federal Reserve interest rates inflation"),
+    ("EARNINGS", "S&P 500 earnings outlook"),
+    ("GEOPOLITICAL", "geopolitical risk trade war sanctions"),
+    ("CENTRAL BANKS", "ECB Bank of England BOJ policy"),
+    ("COMMODITIES", "oil commodities energy supply"),
+]
+
+# How many days of age an article is allowed before it's considered too stale
+# for the macro news strip. Yahoo Search ranks by relevance, not recency, so
+# without this filter the strip can surface headlines from weeks ago.
+NEWS_FRESHNESS_DAYS = 7
+
 PREDICTION_TOPICS = [
     "Fed interest rate decision",
     "recession",

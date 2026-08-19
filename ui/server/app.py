@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from tradingagents.command_center.portfolio_store import PortfolioStore
 
-from . import history, market, models, portfolio, runs, settings_info
+from . import history, market, models, portfolio, runs, settings_info, wealthfront
 from .brokers import BrokerError, BrokerRegistry
 
 load_dotenv()
@@ -255,6 +255,15 @@ async def stream_run(run_id: str):
 @app.get("/api/history")
 def get_history():
     return history.entries()
+
+
+# -- wealthfront scorecard ------------------------------------------------
+
+
+@app.get("/api/wealthfront/scorecard")
+def get_wealthfront_scorecard():
+    """Real Wealthfront trades vs agent ratings on the trade dates."""
+    return wealthfront.scorecard()
 
 
 # -- portfolio / market ---------------------------------------------------

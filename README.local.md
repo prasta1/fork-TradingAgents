@@ -183,13 +183,13 @@ The `.env` file controls which LLM the agents use:
 TRADINGAGENTS_LLM_PROVIDER=openai_compatible
 TRADINGAGENTS_DEEP_THINK_LLM=studio-qwen3-6-27b
 TRADINGAGENTS_QUICK_THINK_LLM=studio-qwen3-6-27b
-TRADINGAGENTS_LLM_BACKEND_URL=http://100.89.133.43:9293/v1
+TRADINGAGENTS_LLM_BACKEND_URL=https://studio.taile85139.ts.net:9292/v1
 TRADINGAGENTS_TEMPERATURE=0.2
 ```
 
 To use a different model, update the deep/quick model names. Ids are host-prefixed — pick one that matches the backend URL above.
 
-- **Studio** (`:9293`): `studio-qwen3-6-27b`, `studio-qwen3-coder-next`, `studio-devstral-24b`, `studio-gemma-4-12b`, `studio-gemma-4-26b-moe`, `studio-glm-4-6-vision`, `studio-ministral-14b`, `studio-nemotron-30b-omni`
+- **Studio** (`:9292`): `studio-qwen3-6-27b`, `studio-qwen3-coder-next`, `studio-devstral-24b`, `studio-gemma-4-12b`, `studio-gemma-4-26b-moe`, `studio-glm-4-6-vision`, `studio-ministral-14b`, `studio-nemotron-30b-omni`
 - **MBP** (`:8999`): `macbook-gemma-4-12b`, `macbook-gemma-4-31b`, `macbook-devstral-24b`, `macbook-nemotron-4b`, `macbook-smollm3-3b`
 
 ## File layout

@@ -46,6 +46,8 @@ export const api = {
 
   history: () => get('/history'),
 
+  wealthfrontScorecard: () => get('/wealthfront/scorecard'),
+
   models: (provider, backendUrl) =>
     get(
       `/models?provider=${encodeURIComponent(provider || '')}&backend_url=${encodeURIComponent(
