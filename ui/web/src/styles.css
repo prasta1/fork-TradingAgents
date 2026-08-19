@@ -13,7 +13,7 @@ body,
 body {
   background: #051424;
   color: #d4e4fa;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

@@ -147,7 +147,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
     >
       <div style={{ padding: '18px 18px 16px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em', color: C.text }}>
-          TradingAgents
+          PitPal
         </div>
         <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.06em', color: C.t6, marginTop: 3 }}>
           CONSOLE · v{version}
