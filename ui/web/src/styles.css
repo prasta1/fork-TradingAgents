@@ -90,6 +90,32 @@ textarea {
 
 /* Hover affordances the design expresses per-element; centralised here so the
    JSX stays close to the original inline-style markup. */
+/* Holds the current screen; screens size themselves with flex: 1 inside it. */
+.screen-slot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ultrawide: past 1900px (wider than any MacBook default) screens stop
+   stretching. The side padding grows so content sits in a centred ~1600px
+   column while the scroll area, and its scrollbar, stay full width. Inline
+   padding is set per screen, hence !important. */
+@media (min-width: 1900px) {
+  .screen-slot > * {
+    padding-left: max(26px, calc((100% - 1600px) / 2)) !important;
+    padding-right: max(26px, calc((100% - 1600px) / 2)) !important;
+  }
+
+  /* Screens that already cap their content (Trade desk, Settings, …) centre
+     it within the column instead of hugging the left edge. Matched on the
+     inline max-width so flex layouts like Live run are left alone. */
+  .screen-slot > * > [style*='max-width'] {
+    margin-inline: auto;
+  }
+}
+
 .row-hover:hover {
   background: #313244;
 }

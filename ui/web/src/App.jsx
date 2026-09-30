@@ -142,7 +142,8 @@ export default function App() {
           tradeDate={tradeDate}
           onNewRun={() => setScreen('deploy')}
         />
-        {screens[screen]}
+        {/* On very wide windows styles.css centres the screen inside this slot. */}
+        <div className="screen-slot">{screens[screen]}</div>
       </main>
     </div>
   )
