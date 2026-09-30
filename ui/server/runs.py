@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Any
 
 from cli.stats_handler import StatsCallbackHandler
-from tradingagents.agents.rating import parse_rating
+from tradingagents.agents.rating import parse_rating, run_rating
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.graph.checkpointer import clear_checkpoint, get_checkpointer, thread_id
 from tradingagents.graph.trading_graph import TradingAgentsGraph
@@ -331,23 +331,12 @@ class RunManager:
                 callbacks=[stats],
             )
 
-            # propagate() does this before running; on the streaming path we own
-            # it. Resolves the previous run's pending entry into a reflection so
-            # the memory log injected below carries realised outcomes.
-            graph._resolve_pending_entries(ticker)
-
-            instrument_context = graph.resolve_instrument_context(ticker, asset_type)
-            past_context = graph.memory_log.get_past_context(ticker)
-            if past_context:
+            # Settles the ticker's pending decisions, then injects memory-log
+            # lessons and instrument identity — the same entry propagate() uses.
+            init_state = graph.create_run_state(ticker, trade_date, asset_type)
+            if init_state.get("past_context"):
                 run.log("memory log: prior decisions injected into Portfolio Manager")
 
-            init_state = graph.propagator.create_initial_state(
-                ticker,
-                trade_date,
-                asset_type=asset_type,
-                past_context=past_context,
-                instrument_context=instrument_context,
-            )
             args = graph.propagator.get_graph_args(callbacks=[stats])
             # "updates" yields {node_name: delta}; the default "values" yields
             # full snapshots with no node attribution.
@@ -371,9 +360,11 @@ class RunManager:
             else:
                 final_decision = run.state.get("final_trade_decision", "")
                 if final_decision:
-                    run.signal = graph.process_signal(final_decision)
+                    run.signal = run_rating(run.state)
                     run.decision = parse_decision(final_decision)
-                    graph.memory_log.store_decision(ticker, trade_date, final_decision)
+                    graph.memory_log.store_decision(
+                        ticker, trade_date, final_decision, rating=run.signal
+                    )
                     run.log("decision appended to trading_memory.md")
                 else:
                     run.log("graph ended without a Portfolio Manager decision", level="warn")
