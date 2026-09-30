@@ -23,7 +23,7 @@ from typing import Callable
 from tradingagents.agents.rating import RATING_REVIEW, RATINGS_5_TIER
 from tradingagents.default_config import DEFAULT_CONFIG
 
-from . import history
+from . import alerts, history
 from .runs import RunManager
 
 TERMINAL = ("complete", "error", "cancelled")
@@ -278,6 +278,16 @@ class BatchManager:
             batch.memo_error = (batch.memo_error or "") + f" · verdict not saved: {exc}"
         # Last, so a poller that sees the batch finish also sees its verdict.
         batch.status = "cancelled" if batch.cancelled else "complete"
+        rated = sum(1 for i in batch.items if i["status"] == "complete")
+        failed = sum(1 for i in batch.items if i["status"] == "error")
+        alerts.feed.add(
+            "warn" if failed or batch.cancelled or batch.memo_error else "info",
+            "batch",
+            f"Batch {batch.status}: {rated} of {len(batch.items)} rated"
+            + (f" · {failed} failed" if failed else ""),
+            batch.memo_error or "",
+            {"screen": "batch"},
+        )
 
     def _run_one(self, batch: Batch, item: dict) -> None:
         """Start one ticker's run and block until it ends, relaying a cancel."""

@@ -23,8 +23,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from tradingagents.command_center.portfolio_store import PortfolioStore
+from tradingagents.default_config import DEFAULT_CONFIG
 
-from . import batch, history, holdings, market, models, portfolio, runs, settings_info, wealthfront
+from . import alerts, batch, history, holdings, market, models, portfolio, runs, settings_info, wealthfront
 from .brokers import BrokerError, BrokerRegistry
 
 load_dotenv()
@@ -93,7 +94,25 @@ def _call(fn, *args, **kwargs):
     try:
         return fn(*args, **kwargs)
     except BrokerError as exc:
+        # Session expiries and broker outages go to the bell; a 400 is an order
+        # the user can fix on the screen they're already looking at.
+        if exc.status >= 500 or exc.status in (401, 403):
+            alerts.feed.add("error", "broker", f"{brokers.active.label}: broker call failed", str(exc), dedupe=f"broker:{exc}")
         raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+
+
+@app.on_event("startup")
+def start_alerts():
+    """Persist alerts beside the reports and start watching the default model backend."""
+    alerts.feed = alerts.AlertFeed(Path(DEFAULT_CONFIG["results_dir"]) / "alerts.jsonl")
+    alerts.watcher.watch(DEFAULT_CONFIG.get("backend_url"))
+    alerts.watcher.start()
+
+
+@app.get("/api/alerts")
+def get_alerts():
+    """Every kept alert, newest first. Read state lives in the browser."""
+    return alerts.feed.list()
 
 
 # -- bootstrap ------------------------------------------------------------
@@ -336,7 +355,11 @@ def get_portfolio():
 @app.get("/api/holdings")
 def get_holdings():
     """Every account (API brokers + statement exports), live-priced."""
-    return holdings.portfolio(brokers)
+    data = holdings.portfolio(brokers)
+    problems = [f"{a['label']}: {a['error']}" for a in data["accounts"] if a.get("error")] + data["errors"]
+    for problem in problems:
+        alerts.feed.add("warn", "broker", "Account data incomplete", problem, dedupe=f"holdings:{problem}")
+    return data
 
 
 @app.get("/api/holdings/activity")

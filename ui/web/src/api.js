@@ -48,6 +48,8 @@ export const api = {
   latestBatch: () => get('/batches/latest'),
   cancelBatch: () => post('/batches/latest/cancel'),
 
+  alerts: () => get('/alerts'),
+
   history: () => get('/history'),
 
   wealthfrontScorecard: () => get('/wealthfront/scorecard'),

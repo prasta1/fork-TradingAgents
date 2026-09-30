@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from './api.js'
 import { C, MONO, label9 } from './theme.js'
 import { useRun } from './useRun.js'
+import AlertBell from './components/AlertBell.jsx'
 
 import BatchRun from './screens/BatchRun.jsx'
 import DebateRoom from './screens/DebateRoom.jsx'
@@ -125,6 +126,13 @@ export default function App() {
         running={running}
         defaults={boot.defaults}
         version={boot.version}
+        openRun={(runId) =>
+          runCtl
+            .attach(runId)
+            .then(() => setScreen('run'))
+            // Runs live in server memory; after a restart only the history remains.
+            .catch(() => setScreen('history'))
+        }
       />
 
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -141,7 +149,7 @@ export default function App() {
   )
 }
 
-function Sidebar({ screen, setScreen, running, defaults, version }) {
+function Sidebar({ screen, setScreen, running, defaults, version, openRun }) {
   return (
     <aside
       style={{
@@ -243,7 +251,8 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
           gap: 9,
         }}
       >
-        <div style={label9}>ACTIVE PROVIDER</div>
+        <AlertBell openRun={openRun} goto={setScreen} />
+        <div style={{ ...label9, marginTop: 6 }}>ACTIVE PROVIDER</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 6, height: 6, borderRadius: 9999, background: C.green, flex: 'none' }} />
           <span style={{ fontFamily: MONO, fontSize: 11, color: C.t2 }}>{defaults.llm_provider}</span>
