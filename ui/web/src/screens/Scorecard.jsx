@@ -11,7 +11,9 @@ const AGREE_STYLE = {
   unrated: { label: 'NO AI RUN', c: C.t5, bg: C.panelDeep },
 }
 
-const COLS = '1fr .9fr 1.1fr 1fr 1fr 1.4fr'
+// minmax(0, …) lets a column shrink below its content, so every row gets the
+// same track widths instead of long names widening their own row.
+const COLS = 'minmax(0,1fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr)'
 
 export default function Scorecard({ goto, setTicker }) {
   const [data, setData] = useState(null)
@@ -104,7 +106,7 @@ export default function Scorecard({ goto, setTicker }) {
           }}
         >
           {['DATE', 'TRADE', 'SIZE', 'WF PRICE', 'AI RATING', 'VERDICT'].map((h, i) => (
-            <span key={h} style={{ ...label95, textAlign: i === 0 ? 'left' : 'right' }}>
+            <span key={h} style={{ ...label95, textAlign: i <= 1 ? 'left' : 'right' }}>
               {h}
             </span>
           ))}
@@ -148,10 +150,11 @@ function TradeRow({ t, onPick }) {
   const buy = t.action === 'BUY'
 
   return (
-    <div
+    <button
+      type="button"
       className="row-hover"
       onClick={onPick}
-      style={{
+      style={{ width: '100%', textAlign: 'left',
         display: 'grid',
         gridTemplateColumns: COLS,
         alignItems: 'center',
@@ -217,6 +220,6 @@ function TradeRow({ t, onPick }) {
           {ag.label}
         </span>
       </span>
-    </div>
+    </button>
   )
 }

@@ -356,11 +356,12 @@ function PositionsTable({ positions, onPick }) {
         const rs = ratingStyle(p.rating)
         const plColor = pnlColor(p.pl)
         return (
-          <div
+          <button
+      type="button"
             key={p.sym}
             className="row-hover"
             onClick={() => onPick(p.sym)}
-            style={{
+            style={{ width: '100%', textAlign: 'left',
               display: 'grid',
               gridTemplateColumns: COLS,
               alignItems: 'center',
@@ -415,7 +416,7 @@ function PositionsTable({ positions, onPick }) {
                 <span style={{ fontFamily: MONO, fontSize: 10.5, color: C.t7 }}>never rated</span>
               )}
             </span>
-          </div>
+          </button>
         )
       })}
     </>

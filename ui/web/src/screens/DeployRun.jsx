@@ -217,6 +217,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                 <button
                   key={a.key}
                   disabled={disabled}
+                  aria-pressed={on}
                   onClick={() => setSelected((p) => ({ ...p, [a.key]: !p[a.key] }))}
                   title={disabled ? 'No fundamentals data for crypto instruments' : undefined}
                   style={{
@@ -304,6 +305,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                 return (
                   <button
                     key={p.provider}
+                    aria-pressed={on}
                     onClick={() => setProvider(p.provider)}
                     style={{
                       display: 'flex',
@@ -417,6 +419,9 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                 </div>
               </div>
               <button
+                role="switch"
+                aria-checked={checkpoint}
+                aria-label="Save a checkpoint after each node"
                 onClick={() => setCheckpoint((v) => !v)}
                 style={{
                   width: 42,
@@ -636,6 +641,8 @@ function RoundControl({ label, hint, value, onChange, derived }) {
         {[1, 2, 3].map((n) => (
           <button
             key={n}
+            aria-pressed={value === n}
+            aria-label={`${label}: ${n}`}
             onClick={() => onChange(n)}
             style={{
               width: 34,
