@@ -63,11 +63,13 @@ export default function TradeDesk({ run, ticker, boot }) {
       .catch(() => setBuyingPower(null))
   }, [symbol, loadQuote])
 
-  // Seed the limit price from the agent's entry, or from the live quote.
+  // Seed an empty limit from the live quote — except for the agent's proposed
+  // symbol, where the limit stays blank so you set the entry deliberately.
   useEffect(() => {
     if (limitPrice) return
     if (decision.price_target && run?.request?.ticker === symbol) return
-    if (quote?.last) setLimitPrice(String(quote.last))
+    // Quotes can carry sub-cent precision (e.g. 185.1252); brokers only take cents.
+    if (quote?.last) setLimitPrice(Number(quote.last).toFixed(2))
     // Only seeds an empty field.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote])
@@ -103,9 +105,15 @@ export default function TradeDesk({ run, ticker, boot }) {
     time_in_force: timeInForce,
   }
 
+  // Brokers reject prices finer than a cent. Flag it here rather than silently
+  // rounding a price the user typed.
+  const activePrice = orderType === 'LIMIT' ? limitPrice : orderType === 'STOP' ? stopPrice : ''
+  const priceTooPrecise = /\.\d{3,}$/.test(String(activePrice).trim())
+
   const ticketValid =
     order.symbol &&
     Number(quantity) > 0 &&
+    !priceTooPrecise &&
     (orderType !== 'LIMIT' || Number(limitPrice) > 0) &&
     (orderType !== 'STOP' || Number(stopPrice) > 0)
 
@@ -201,7 +209,9 @@ export default function TradeDesk({ run, ticker, boot }) {
                   onClick={() => {
                     setSymbol(run.request.ticker)
                     setSide(['Sell', 'Underweight'].includes(decision.rating) ? 'SELL' : 'BUY')
-                    if (decision.price_target) setLimitPrice(String(decision.price_target))
+                    // The target is where the agent expects to exit, not an entry
+                    // price — using it as a buy limit fills at market. Leave it blank.
+                    setLimitPrice('')
                     invalidate()
                   }}
                 >
@@ -209,8 +219,9 @@ export default function TradeDesk({ run, ticker, boot }) {
                 </Btn>
               </div>
               <div style={{ marginTop: 14, fontSize: 11.5, lineHeight: 1.55, color: C.t4, textWrap: 'pretty' }}>
-                Loading a proposal only fills the ticket. Nothing is sent to Public.com until you
-                review and confirm below.
+                Loading a proposal fills the symbol and side only — you set quantity and price.
+                Nothing is sent to {activeBroker?.label || boot.active_broker} until you review
+                and confirm below.
               </div>
             </div>
           ) : (
@@ -379,8 +390,8 @@ export default function TradeDesk({ run, ticker, boot }) {
                   />
                 </Field>
               )}
-              {orderType === 'MARKET' && (
-                <Field label="TIME IN FORCE">
+              {/* Sent with every order type, so it is always visible. */}
+              <Field label="TIME IN FORCE">
                   <select
                     value={timeInForce}
                     onChange={(e) => {
@@ -396,8 +407,23 @@ export default function TradeDesk({ run, ticker, boot }) {
                     ))}
                   </select>
                 </Field>
-              )}
             </div>
+
+            {priceTooPrecise && (
+              <div style={{ fontSize: 11.5, lineHeight: 1.55, color: C.red, marginTop: -6 }}>
+                Use at most two decimal places for the {orderType === 'STOP' ? 'stop' : 'limit'} price
+                (e.g. {Number(activePrice).toFixed(2)}).
+              </div>
+            )}
+
+            {hasProposal && run.request.ticker === order.symbol && (decision.price_target || decision.stop) && (
+              <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.t4, lineHeight: 1.55, marginTop: -6 }}>
+                Agent reference · target{' '}
+                <span style={{ color: C.text }}>{decision.price_target ? fmtMoney(decision.price_target) : '—'}</span>
+                {' '}· stop{' '}
+                <span style={{ color: C.red }}>{decision.stop ? fmtMoney(decision.stop) : '—'}</span>
+              </div>
+            )}
 
             <div
               style={{
@@ -467,13 +493,31 @@ export default function TradeDesk({ run, ticker, boot }) {
                   <strong>
                     {quantity} {order.symbol}
                   </strong>{' '}
-                  {orderType === 'LIMIT' ? `at ${fmtMoney(limitPrice)}` : `at ${orderType.toLowerCase()}`}?
+                  {orderType === 'LIMIT'
+                    ? `at ${fmtMoney(limitPrice)}`
+                    : orderType === 'STOP'
+                      ? `with a stop at ${fmtMoney(stopPrice)}`
+                      : 'at market'}
+                  , {timeInForce}?
+                  {preflight?.estimated_cost != null && (
+                    <>
+                      {' '}Est. total <strong>{fmtMoney(preflight.estimated_cost)}</strong>
+                      {Number(buyingPower) > 0 &&
+                        ` (${((Number(preflight.estimated_cost) / Number(buyingPower)) * 100).toFixed(1)}% of buying power)`}
+                      .
+                    </>
+                  )}{' '}
                   This places money at risk in your live{' '}
                   <strong>{activeBroker?.label || boot.active_broker}</strong> account.
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn onClick={place} disabled={busy} style={{ flex: 1, padding: 10, fontSize: 12.5 }}>
-                    {busy ? 'Submitting…' : 'Confirm order'}
+                  <Btn
+                    variant={side === 'SELL' ? 'sell' : 'green'}
+                    onClick={place}
+                    disabled={busy}
+                    style={{ flex: 1, padding: 10, fontSize: 12.5 }}
+                  >
+                    {busy ? 'Submitting…' : side === 'SELL' ? 'Confirm sell' : 'Confirm buy'}
                   </Btn>
                   <Btn variant="ghost" onClick={() => setConfirming(false)}>
                     Cancel

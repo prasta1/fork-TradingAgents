@@ -87,6 +87,13 @@ export function Btn({ variant = 'green', onClick, disabled, children, style, tit
       fontSize: 12,
       fontWeight: 500,
     },
+    // Filled red for committing a sell, so it never reads as the green buy action.
+    sell: {
+      background: disabled ? C.border2 : C.red,
+      color: disabled ? C.t5 : '#3a0f0c',
+      padding: '9px 16px',
+      fontSize: 12.5,
+    },
     danger: {
       border: `1px solid ${C.redBorder}`,
       color: C.red,
@@ -100,7 +107,7 @@ export function Btn({ variant = 'green', onClick, disabled, children, style, tit
       title={title}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={variant === 'green' && !disabled ? 'btn-green' : 'btn-ghost'}
+      className={disabled || !['green', 'sell'].includes(variant) ? 'btn-ghost' : `btn-${variant}`}
       style={{
         ...BTN_BASE,
         ...variants[variant],

@@ -78,6 +78,10 @@ textarea {
   background: #6ffbbe !important;
 }
 
+.btn-sell:hover {
+  background: #ffcdc8 !important;
+}
+
 .btn-ghost:hover {
   background: #122131;
 }
