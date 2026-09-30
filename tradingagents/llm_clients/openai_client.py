@@ -296,6 +296,13 @@ class OpenAIClient(BaseLLMClient):
                     "e.g. http://localhost:8000/v1 (vLLM) or http://localhost:1234/v1 "
                     "(LM Studio)."
                 )
+            # Local servers (llama-swap, Ollama, vLLM, LM Studio) serve chat only
+            # under /v1, but some answer /models at the root too, so a bare
+            # host:port looks valid in the model picker and then 404s on the
+            # first chat call. Hosted providers are left alone (DeepSeek's
+            # endpoint is a bare host).
+            if base_url and spec.key_optional and urlparse(base_url).path in ("", "/"):
+                base_url = base_url.rstrip("/") + "/v1"
             if base_url:
                 llm_kwargs["base_url"] = base_url
 

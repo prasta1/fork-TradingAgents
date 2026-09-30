@@ -22,6 +22,22 @@ def test_factory_routes_to_openai_client():
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "given, expected",
+    [
+        ("http://host:8999", "http://host:8999/v1"),
+        ("http://host:8999/", "http://host:8999/v1"),
+        ("http://host:8999/v1", "http://host:8999/v1"),
+        ("https://relay.example/api/v1", "https://relay.example/api/v1"),
+    ],
+)
+def test_bare_host_gets_v1(given, expected):
+    """A bare host:port 404s on /chat/completions; /v1 is appended only when no path is given."""
+    llm = OpenAIClient("m", base_url=given, provider="openai_compatible").get_llm()
+    assert llm.openai_api_base == expected
+
+
+@pytest.mark.unit
 def test_base_url_required(monkeypatch):
     monkeypatch.delenv("OPENAI_COMPATIBLE_API_KEY", raising=False)
     with pytest.raises(ValueError, match="requires a base_url"):
