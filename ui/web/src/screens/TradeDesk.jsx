@@ -237,9 +237,8 @@ export default function TradeDesk({ run, ticker, boot }) {
 
         <section
           aria-label="Order ticket"
+          className="td-ticket"
           style={{
-            flex: '1 0 320px',
-            maxWidth: 400,
             border: `1px solid ${C.border3}`,
             borderRadius: 8,
             background: C.panel,
@@ -334,8 +333,8 @@ export default function TradeDesk({ run, ticker, boot }) {
                 marginTop: -4,
               }}
             >
-              Forecast ref · target {decision.price_target ? fmtMoney(decision.price_target) : '—'} · stop{' '}
-              {decision.stop ? fmtMoney(decision.stop) : '—'} · not applied
+              Ref only · tgt {decision.price_target ? fmtMoney(decision.price_target) : '—'} · stop{' '}
+              {decision.stop ? fmtMoney(decision.stop) : '—'}
             </div>
           )}
 
@@ -459,6 +458,14 @@ export default function TradeDesk({ run, ticker, boot }) {
   )
 }
 
+/** "4 weeks" / "10 days" / "3 months" → days; null when the agent's wording doesn't parse. */
+function parseHorizonDays(text) {
+  const m = /(\d+(?:\.\d+)?)\s*(day|week|month|year)/i.exec(text || '')
+  if (!m) return null
+  const per = { day: 1, week: 7, month: 30, year: 365 }[m[2].toLowerCase()]
+  return Number(m[1]) * per
+}
+
 const hhmm = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 
 /** Segmented control: one pressed button, filled in Blue unless `fill` says otherwise. */
@@ -568,11 +575,6 @@ function Book({ k, v, sub, subColor = C.t3, divider }) {
  */
 function ForecastPanel({ run, decision, closes, onLoad }) {
   const issued = run.started_at ? new Date((run.started_at + (run.elapsed || 0)) * 1000) : null
-  const ratingColor = ['Buy', 'Overweight'].includes(decision.rating)
-    ? C.green
-    : ['Sell', 'Underweight'].includes(decision.rating)
-      ? C.red
-      : C.text
   return (
     <section
       aria-label="Agent forecast"
@@ -581,7 +583,7 @@ function ForecastPanel({ run, decision, closes, onLoad }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 260 }}>
           <h2 style={{ margin: 0, fontSize: 15, fontWeight: 650, color: C.mauve }}>
-            {run.request.ticker} forecast · <span style={{ color: ratingColor }}>{decision.rating}</span>
+            {run.request.ticker} forecast · <strong style={{ fontWeight: 750 }}>{decision.rating}</strong>
             {decision.price_target && <> · target {fmtMoney(decision.price_target)}</>}
             {decision.stop && <> · stop {fmtMoney(decision.stop)}</>}
           </h2>
@@ -600,7 +602,7 @@ function ForecastPanel({ run, decision, closes, onLoad }) {
           Load into ticket
         </Btn>
       </div>
-      <PriceChart closes={closes} decision={decision} />
+      <PriceChart closes={closes} decision={decision} issued={issued} />
       <div style={{ fontSize: 12, color: C.t3, marginTop: 8 }}>
         Loading fills symbol and side only; nothing is sent until you review and confirm.
       </div>
@@ -626,14 +628,22 @@ function ObservedPanel({ symbol, closes }) {
  * forecast window to the right carries its target and stop as dashed
  * reference lines. Plain SVG — no chart dependency.
  */
-function PriceChart({ closes, decision }) {
+function PriceChart({ closes, decision, issued }) {
   const W = 760
   const H = 320
   const padT = 22
   const padB = 24
   const axisW = 52
+  const plotR = W - axisW
   const forecast = Boolean(decision)
-  const nowX = forecast ? Math.round((W - axisW) * 0.66) : W - axisW
+  // Scale the forecast window to the horizon when it reads as "N days/weeks/
+  // months": 30 sessions ≈ 42 calendar days of observed history. This is only
+  // the run's own horizon on a time axis — no forecast model is implied.
+  const horizonDays = forecast ? parseHorizonDays(decision.horizon) : null
+  const share = horizonDays ? Math.min(Math.max(42 / (42 + horizonDays), 0.5), 0.8) : 0.66
+  // Without a forecast, stop short of the axis to leave a lane for the LAST tag.
+  const nowX = forecast ? Math.round(plotR * share) : plotR - 120
+  const validTo = horizonDays && issued ? new Date(issued.getTime() + horizonDays * 86400000) : null
 
   if (closes === null) {
     return <ChartNote tone="warn">Observation unavailable: price history could not be loaded.</ChartNote>
@@ -642,6 +652,7 @@ function PriceChart({ closes, decision }) {
     return <ChartNote>Loading observed prices…</ChartNote>
   }
 
+  const observedAt = `Observed ${hhmm(new Date())}`
   const refs = forecast ? [decision.price_target, decision.stop].filter((v) => Number(v) > 0).map(Number) : []
   const values = [...closes, ...refs]
   let lo = Math.min(...values)
@@ -659,7 +670,6 @@ function PriceChart({ closes, decision }) {
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((v) => v >= raw)
   const ticks = []
   for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) ticks.push(t)
-  const plotR = W - axisW
 
   return (
     <svg
@@ -687,26 +697,31 @@ function PriceChart({ closes, decision }) {
           <text x={nowX + 8} y={13} fontSize="11" fill={C.mauve}>
             FORECAST · dashed{decision.horizon ? ` · valid ${decision.horizon}` : ''}
           </text>
+          {validTo && (
+            <text x={plotR} y={H - 6} fontSize="11" fill={C.mauve} textAnchor="end">
+              valid to {validTo.toLocaleDateString([], { day: 'numeric', month: 'short' })}
+            </text>
+          )}
           <text x={plotR - 6} y={H - padB - 8} fontSize="10.5" fill={C.t3} textAnchor="end">
             forecast view · work in progress
           </text>
           {decision.price_target > 0 && (
-            <RefLine x1={0} x2={plotR} y={y(decision.price_target)} color={C.mauve} label={`TARGET ${fmtNum(decision.price_target)}`} />
+            <RefLine x1={nowX} x2={plotR} y={y(decision.price_target)} dash="6 4" label={`TARGET ${fmtNum(decision.price_target)}`} />
           )}
           {decision.stop > 0 && (
-            <RefLine x1={0} x2={plotR} y={y(decision.stop)} color={C.red} label={`STOP ${fmtNum(decision.stop)}`} />
+            <RefLine x1={nowX} x2={plotR} y={y(decision.stop)} dash="2 3" label={`STOP ${fmtNum(decision.stop)}`} />
           )}
         </>
       )}
 
       <text x={nowX - 8} y={13} fontSize="11" fill={C.t1} textAnchor="end">
-        OBSERVED · {closes.length} sessions · solid
+        OBSERVED · {closes.length} sessions · solid{observedAt ? ` · ${observedAt}` : ''}
       </text>
       <polyline points={line} fill="none" stroke={C.text} strokeWidth="1.8" strokeLinejoin="round" />
       <line x1={nowX} x2={nowX} y1={0} y2={H - padB} stroke={C.t1} strokeWidth="1.2" />
       <circle cx={nowX} cy={y(last)} r="3.5" fill={C.text} />
       {/* The tag sits just past the now rule, so it never covers observed prices. */}
-      <g transform={`translate(${Math.min(nowX + 8, plotR - 112)}, ${Math.max(Math.min(y(last) - 10, H - padB - 24), 20)})`}>
+      <g transform={`translate(${nowX + 8}, ${Math.max(Math.min(y(last) - 10, H - padB - 24), 20)})`}>
         <rect width="108" height="20" rx="3" fill={C.text} />
         <text x="54" y="14" fontSize="12" fontWeight="600" fill={C.onFill} textAnchor="middle">
           LAST {fmtNum(last)}
@@ -719,11 +734,12 @@ function PriceChart({ closes, decision }) {
   )
 }
 
-function RefLine({ x1, x2, y, color, label }) {
+/** A forecast reference level: always mauve (it is the agent's number, not money); target and stop differ by dash and label. */
+function RefLine({ x1, x2, y, dash, label }) {
   return (
     <g>
-      <line x1={x1} x2={x2} y1={y} y2={y} stroke={color} strokeDasharray="5 4" strokeWidth="1.2" />
-      <text x={x2 - 6} y={y - 5} fontSize="11" fontWeight="600" fill={color} textAnchor="end">
+      <line x1={x1} x2={x2} y1={y} y2={y} stroke={C.mauve} strokeDasharray={dash} strokeWidth="1.4" />
+      <text x={x2 - 6} y={y - 5} fontSize="11" fontWeight="600" fill={C.mauve} textAnchor="end">
         {label}
       </text>
     </g>

@@ -201,7 +201,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
                       height: 5,
                       borderRadius: 9999,
                       flex: 'none',
-                      background: active ? C.green : C.t9,
+                      background: active ? C.blue : C.t9,
                     }}
                   />
                   <span
@@ -219,7 +219,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
                       style={{
                         fontFamily: MONO,
                         fontSize: 9.5,
-                        color: C.green,
+                        color: C.mauve,
                         animation: 'tapulse 1.4s infinite',
                       }}
                     >
@@ -245,7 +245,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
       >
         <div style={label9}>ACTIVE PROVIDER</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: 9999, background: C.green, flex: 'none' }} />
+          <span style={{ width: 6, height: 6, borderRadius: 9999, background: C.blue, flex: 'none' }} />
           <span style={{ fontFamily: MONO, fontSize: 11, color: C.t2 }}>{defaults.llm_provider}</span>
         </div>
         <div
@@ -303,7 +303,7 @@ function Header({ title, sub, ticker, tradeDate, onNewRun }) {
           <span style={{ fontFamily: MONO, fontSize: 11, color: C.t2 }}>{tradeDate}</span>
         </div>
         <button
-          className="btn-green"
+          className="btn-primary"
           onClick={onNewRun}
           style={{
             padding: '8px 15px',
@@ -311,8 +311,8 @@ function Header({ title, sub, ticker, tradeDate, onNewRun }) {
             fontSize: 12.5,
             fontWeight: 600,
             cursor: 'pointer',
-            background: C.green,
-            color: C.greenFg,
+            background: C.blue,
+            color: C.onFill,
           }}
         >
           New run

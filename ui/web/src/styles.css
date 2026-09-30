@@ -24,7 +24,7 @@ a {
 }
 
 a:hover {
-  color: #a6e3a1;
+  color: #b4befe;
 }
 
 button {
@@ -102,6 +102,10 @@ textarea {
   background: #c0ecbc !important;
 }
 
+.btn-primary:hover {
+  background: #a8c7fb !important;
+}
+
 .btn-sell:hover {
   background: #f6a8bd !important;
 }
@@ -111,7 +115,18 @@ textarea {
 }
 
 .link-hover:hover {
-  color: #a6e3a1;
+  color: #b4befe;
+}
+
+/* Ticket docks beside the chart; once they can't share a row it takes the full width. */
+.td-ticket {
+  flex: 0 0 380px;
+}
+
+@media (max-width: 1200px) {
+  .td-ticket {
+    flex: 1 1 100%;
+  }
 }
 
 /* Markdown rendered from agent reports, styled to the design's type scale. */
