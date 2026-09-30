@@ -52,6 +52,18 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
 
   const [models, setModels] = useState({ deep: [], quick: [], source: null, error: null })
   const [modelsLoading, setModelsLoading] = useState(false)
+  // null = not scanned yet; [] = scanned, nothing found.
+  const [scan, setScan] = useState(null)
+  const [scanning, setScanning] = useState(false)
+
+  function scanLocal() {
+    setScanning(true)
+    api
+      .scanModels()
+      .then(setScan)
+      .catch(() => setScan([]))
+      .finally(() => setScanning(false))
+  }
 
   useEffect(() => {
     api.settings().then((s) => setProviders(s.providers)).catch(() => setProviders([]))
@@ -345,6 +357,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                 placeholder="https://host:port/v1"
                 style={inputStyle}
               />
+              <LocalScan scan={scan} scanning={scanning} onScan={scanLocal} onPick={setBackendUrl} />
             </Field>
           </Panel>
 
@@ -492,6 +505,43 @@ function providerOk(providers, key) {
 }
 
 /** Where the model list came from, and a way to re-query it. */
+function LocalScan({ scan, scanning, onScan, onPick }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8 }}>
+      <button
+        className="link-hover"
+        onClick={onScan}
+        disabled={scanning}
+        style={{ fontSize: 11.5, color: C.link, cursor: scanning ? 'default' : 'pointer' }}
+      >
+        {scanning ? 'Scanning…' : 'Scan localhost'}
+      </button>
+      {scan?.length === 0 && (
+        <span style={{ fontFamily: MONO, fontSize: 10.5, color: C.t6 }}>no local servers found</span>
+      )}
+      {scan?.map((hit) => (
+        <button
+          key={hit.port}
+          className="link-hover"
+          onClick={() => onPick(hit.backend_url)}
+          title={hit.backend_url}
+          style={{
+            fontFamily: MONO,
+            fontSize: 10.5,
+            color: C.text,
+            padding: '3px 8px',
+            border: `1px solid ${C.border}`,
+            borderRadius: 4,
+            cursor: 'pointer',
+          }}
+        >
+          :{hit.port} {hit.server} · {hit.models} models
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function ModelSourceLine({ models, loading, onRefresh }) {
   const count = models.deep?.length ?? 0
   let text

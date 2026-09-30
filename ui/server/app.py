@@ -108,6 +108,12 @@ def bootstrap():
     }
 
 
+@app.get("/api/models/scan")
+def scan_models():
+    """Local OpenAI-compatible servers found on their default ports."""
+    return models.scan_local()
+
+
 @app.get("/api/models")
 def get_models(provider: str = Query(""), backend_url: str = Query("")):
     """Model options for the Deploy pickers.

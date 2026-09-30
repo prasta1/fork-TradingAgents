@@ -48,6 +48,8 @@ export const api = {
 
   wealthfrontScorecard: () => get('/wealthfront/scorecard'),
 
+  scanModels: () => get('/models/scan'),
+
   models: (provider, backendUrl) =>
     get(
       `/models?provider=${encodeURIComponent(provider || '')}&backend_url=${encodeURIComponent(
