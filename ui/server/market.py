@@ -11,12 +11,14 @@ each fan out to several tickers on load, and these are all network calls.
 from __future__ import annotations
 
 import math
+import re
 import threading
 import time
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import pandas as pd
 import yfinance as yf
 
 from tradingagents.dataflows.symbols import normalize_symbol
@@ -116,6 +118,57 @@ def quote(ticker: str) -> dict:
         ],
     }
 
+
+
+@cached(ttl=60)
+def last_prices(symbols: tuple[str, ...]) -> dict[str, float]:
+    """Latest close (live during market hours) for many symbols in one request.
+
+    Args:
+        symbols: Tickers as the caller knows them. A tuple so it can be cached.
+
+    Returns:
+        ``{symbol: price}``; symbols Yahoo cannot price are left out.
+    """
+    if not symbols:
+        return {}
+    # Brokers write class shares as BRK.B; Yahoo spells them BRK-B.
+    yahoo = {normalize_symbol(re.sub(r"^([A-Z]+)\.([A-Z])$", r"\1-\2", s.upper())): s for s in symbols}
+    closes = yf.download(
+        list(yahoo), period="5d", progress=False, auto_adjust=False, group_by="column"
+    )["Close"]
+    if isinstance(closes, pd.Series):  # one symbol comes back as a Series
+        closes = closes.to_frame(next(iter(yahoo)))
+    out = {}
+    for column in closes.columns:
+        series = closes[column].dropna()
+        if not series.empty and column in yahoo:
+            out[yahoo[column]] = round(float(series.iloc[-1]), 4)
+    return out
+
+
+@cached(ttl=86400)
+def ticker_for_name(name: str) -> str | None:
+    """Best US-listed ticker for a security name, for exports that omit the ticker.
+
+    Args:
+        name: Security name as a statement prints it, e.g. ``"EXXON MOBIL CORP COM"``.
+
+    Returns:
+        The first US equity/ETF symbol Yahoo's search returns, or None.
+    """
+    # Share-class and legal-form suffixes make the search miss.
+    query = re.sub(r"\s+(COM|CL [A-Z]|INC|CORP|CO|LTD)\b.*$", "", name.upper())
+    try:
+        quotes = yf.Search(query, max_results=5, news_count=0).quotes
+    except Exception:
+        return None
+    for q in quotes:
+        symbol = q.get("symbol") or ""
+        # Foreign listings carry an exchange suffix (1DD.MI, XOM.NE).
+        if q.get("quoteType") in ("EQUITY", "ETF") and "." not in symbol:
+            return symbol
+    return None
 
 def _fmt_big(v) -> str:
     v = _clean(v)

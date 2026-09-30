@@ -152,6 +152,27 @@ class PublicClient:
         """Full portfolio: positions, cash, buying power, total account value."""
         return self._request("GET", f"/trading/{self.account_id()}/portfolio/v2")
 
+    def history(self, start: str | None = None) -> list[dict]:
+        """Every account transaction since ``start`` (ISO 8601), all pages.
+
+        Args:
+            start: Earliest timestamp, e.g. ``"2020-01-01T00:00:00Z"``. None
+                lets Public apply its own default window.
+
+        Returns:
+            Raw transaction dicts (trades, dividends, transfers, fees).
+        """
+        params: dict[str, Any] = {"pageSize": 1000}
+        if start:
+            params["start"] = start
+        out: list[dict] = []
+        while True:
+            data = self._request("GET", f"/trading/{self.account_id()}/history", params=params) or {}
+            out.extend(data.get("transactions") or [])
+            if not data.get("nextToken"):
+                return out
+            params["nextToken"] = data["nextToken"]
+
     # -- market data ------------------------------------------------------
 
     def quotes(self, symbols: list[str], instrument_type: str = "EQUITY") -> dict[str, dict]:

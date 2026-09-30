@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from tradingagents.command_center.portfolio_store import PortfolioStore
 
-from . import history, market, models, portfolio, runs, settings_info, wealthfront
+from . import history, holdings, market, models, portfolio, runs, settings_info, wealthfront
 from .brokers import BrokerError, BrokerRegistry
 
 load_dotenv()
@@ -272,6 +272,18 @@ def get_wealthfront_scorecard():
 @app.get("/api/portfolio")
 def get_portfolio():
     return _call(portfolio.dashboard, brokers.active)
+
+
+@app.get("/api/holdings")
+def get_holdings():
+    """Every account (API brokers + statement exports), live-priced."""
+    return holdings.portfolio(brokers)
+
+
+@app.get("/api/holdings/activity")
+def get_holding_activity(symbol: str = Query(...)):
+    """All transactions in one symbol across every account."""
+    return holdings.activity(brokers, symbol)
 
 
 @app.get("/api/portfolio/headlines")

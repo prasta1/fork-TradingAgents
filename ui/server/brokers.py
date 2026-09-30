@@ -13,6 +13,8 @@ review-before-submit structural rather than a UI convention.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from .etrade_client import (
     ETradeAPIError,
     ETradeClient,
@@ -84,6 +86,23 @@ class Broker:
     def place(self, order: dict, token: dict | None) -> dict: ...
     def order_status(self, order_id: str) -> dict: ...
     def cancel(self, order_id: str) -> None: ...
+    def activity(self) -> list[dict]: ...
+
+
+def _activity_row(date, symbol, action, qty, price, amount, description) -> dict:
+    """One normalised account transaction, the shape every activity source returns."""
+    qty = abs(qty) if qty is not None else None
+    if price is None and qty and amount is not None:
+        price = abs(amount) / qty
+    return {
+        "date": date,
+        "symbol": (symbol or "").upper(),
+        "action": (action or "").upper(),
+        "qty": qty,
+        "price": round(price, 4) if price is not None else None,
+        "amount": amount,
+        "description": description or "",
+    }
 
 
 class PublicBroker(Broker):
@@ -203,6 +222,25 @@ class PublicBroker(Broker):
 
     def cancel(self, order_id: str) -> None:
         self._call(self.client.cancel_order, order_id)
+
+    def activity(self) -> list[dict]:
+        # Public's default window is short; ask for everything since the
+        # account could have opened.
+        raw = self._call(self.client.history, "2000-01-01T00:00:00Z")
+        return [
+            _activity_row(
+                date=(t.get("timestamp") or "")[:10],
+                symbol=t.get("symbol"),
+                # Trades carry a side; everything else (dividends, deposits,
+                # fees) is identified by its subtype.
+                action=t.get("side") if t.get("type") == "TRADE" else (t.get("subType") or t.get("type")),
+                qty=_f(t.get("quantity")),
+                price=None,
+                amount=_f(t.get("netAmount")),
+                description=t.get("description"),
+            )
+            for t in raw
+        ]
 
 
 def _public_order(order: dict) -> dict:
@@ -359,6 +397,28 @@ class ETradeBroker(Broker):
 
     def cancel(self, order_id: str) -> None:
         self._call(self.client.cancel_order, order_id)
+
+    def activity(self) -> list[dict]:
+        rows = []
+        for t in self._call(self.client.transactions):
+            brokerage = t.get("brokerage") or {}
+            epoch_ms = t.get("transactionDate")
+            rows.append(
+                _activity_row(
+                    date=(
+                        datetime.fromtimestamp(epoch_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
+                        if epoch_ms
+                        else ""
+                    ),
+                    symbol=(brokerage.get("product") or {}).get("symbol") or brokerage.get("displaySymbol"),
+                    action=t.get("transactionType"),
+                    qty=_f(brokerage.get("quantity")),
+                    price=_f(brokerage.get("price")),
+                    amount=_f(t.get("amount")),
+                    description=t.get("description"),
+                )
+            )
+        return rows
 
 
 def _etrade_order(order: dict) -> dict:

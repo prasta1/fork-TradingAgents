@@ -347,6 +347,31 @@ class ETradeClient:
             positions.extend(account.get("Position", []) or [])
         return positions
 
+    def transactions(self) -> list[dict]:
+        """Every transaction E*TRADE will return for the active account.
+
+        E*TRADE serves at most two years of history, 50 rows per page, and
+        answers 204 when there is nothing to list.
+
+        Returns:
+            Raw ``Transaction`` dicts, newest first.
+        """
+        key = self.account_key()
+        params: dict[str, Any] = {"count": 50}
+        out: list[dict] = []
+        while True:
+            try:
+                data = self._request("GET", f"/v1/accounts/{key}/transactions", params=params)
+            except ETradeAPIError as exc:
+                if exc.status == 204:
+                    return out
+                raise
+            body = (data or {}).get("TransactionListResponse", {})
+            out.extend(body.get("Transaction", []) or [])
+            if not body.get("moreTransactions") or not body.get("marker"):
+                return out
+            params["marker"] = body["marker"]
+
     # -- market data ------------------------------------------------------
 
     def quotes(self, symbols: list[str]) -> dict[str, dict]:

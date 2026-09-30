@@ -5,6 +5,7 @@ import { useRun } from './useRun.js'
 
 import DebateRoom from './screens/DebateRoom.jsx'
 import DeployRun from './screens/DeployRun.jsx'
+import Holdings from './screens/Holdings.jsx'
 import LiveRun from './screens/LiveRun.jsx'
 import Portfolio from './screens/Portfolio.jsx'
 import ResearchHub from './screens/ResearchHub.jsx'
@@ -15,7 +16,7 @@ import Strategy from './screens/Strategy.jsx'
 import TradeDesk from './screens/TradeDesk.jsx'
 
 const NAV = [
-  { title: 'PORTFOLIO', items: [['portfolio', 'Dashboard'], ['scorecard', 'Scorecard'], ['trade', 'Trade desk']] },
+  { title: 'PORTFOLIO', items: [['portfolio', 'Dashboard'], ['holdings', 'Live portfolio'], ['scorecard', 'Scorecard'], ['trade', 'Trade desk']] },
   { title: 'RESEARCH', items: [['research', 'Research hub'], ['debate', 'Debate room']] },
   {
     title: 'AGENTS',
@@ -26,6 +27,7 @@ const NAV = [
 
 const TITLES = {
   portfolio: ['Portfolio', 'positions the agents trade against'],
+  holdings: ['Live portfolio', 'every account · API + statements'],
   scorecard: ['Scorecard', 'Wealthfront trades vs agent ratings'],
   trade: ['Trade desk', 'order entry · Public.com'],
   research: ['Research hub', 'analyst intelligence'],
@@ -97,6 +99,7 @@ export default function App() {
 
   const screens = {
     portfolio: <Portfolio {...shared} />,
+    holdings: <Holdings {...shared} />,
     scorecard: <Scorecard {...shared} />,
     trade: <TradeDesk {...shared} />,
     research: <ResearchHub {...shared} />,

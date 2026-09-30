@@ -56,6 +56,8 @@ export const api = {
     ),
 
   portfolio: () => get('/portfolio'),
+  holdings: () => get('/holdings'),
+  holdingActivity: (symbol) => get(`/holdings/activity?symbol=${encodeURIComponent(symbol)}`),
   positionHeadlines: (symbols) =>
     get(`/portfolio/headlines?symbols=${encodeURIComponent(symbols.join(','))}`),
   macro: () => get('/macro'),
