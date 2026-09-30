@@ -74,18 +74,11 @@ export const C = {
 export const SANS = "ui-sans-serif, -apple-system, 'SF Pro Text', system-ui, sans-serif"
 export const MONO = "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace"
 
-// Rating -> colour + chip background, used everywhere a rating is shown.
-export function ratingStyle(rating) {
-  switch ((rating || '').toLowerCase()) {
-    case 'buy':
-    case 'overweight':
-      return { c: C.green, bg: C.greenBg }
-    case 'sell':
-    case 'underweight':
-      return { c: C.red, bg: C.redBg }
-    default:
-      return { c: C.link, bg: C.border2 }
-  }
+// A rating is an agent's opinion, never money, so every rating is mauve
+// regardless of direction; the word itself says Buy or Sell (DESIGN.md:
+// "No Money Ink On Opinions"). Kept as a function so call sites don't change.
+export function ratingStyle() {
+  return { c: C.mauve, bg: C.mauveBg }
 }
 
 // Green for gains, red for losses, muted when there is nothing to say.

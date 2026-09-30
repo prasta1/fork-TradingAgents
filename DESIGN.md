@@ -144,10 +144,10 @@ Forecast logic is still being defined. Until it is, forecast surfaces show only 
 Catppuccin Mocha, used by role rather than by mood.
 
 ### Primary
-- **Mauve**: agent forecasts only. The forecast panel's dashed frame, its headline and issued stamp, the target and stop reference lines, the "Ref only" note on the ticket, and the "live" run badge. **Mauve Wash** fills the forecast window on a chart.
+- **Mauve**: agent forecasts and agent work only. The forecast panel's dashed frame, headline and issued stamp; target and stop wherever they appear; every agent rating on every screen (`ratingStyle`); Live run's node progress and the "live" badge; the "Ref only" note on the ticket. **Mauve Wash** fills the forecast window on a chart.
 
 ### Secondary
-- **Blue**: interaction. Selected segments, the focus ring, primary buttons that don't commit money ("New run", "Initialize agent run"), links, and the active-nav dot. **Lavender** is link hover.
+- **Blue**: interaction and status. Selected segments, option cards and toggles (Deploy run's analysts, providers, rounds), the active account chip, the focus ring, primary buttons that don't commit money ("New run", "Initialize agent run"), links, connection dots and the active-nav dot. **Lavender** is link hover.
 
 ### Tertiary
 - **Green**: gain and Buy. The Buy segment and "Confirm buy" button, positive change figures.
@@ -241,5 +241,3 @@ Grouped sidebar rows with a 5px dot. Active row: Surface0 fill, Text, Blue dot. 
 - **Don't** use green on a control that doesn't commit a buy.
 - **Don't** use Surface2 or darker for text.
 - **Don't** add a light theme or paper textures.
-
-Open decision: the Dashboard and other screens still colour agent ratings green/red via `ratingStyle`, and Deploy run's selected analysts are green. Both predate this system and conflict with The No Money Ink On Opinions Rule; they are left for the owner to decide.
