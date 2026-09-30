@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Any
 
 from cli.stats_handler import StatsCallbackHandler
-from tradingagents.agents.utils.rating import parse_rating
+from tradingagents.agents.rating import parse_rating
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.graph.checkpointer import clear_checkpoint, get_checkpointer, thread_id
 from tradingagents.graph.trading_graph import TradingAgentsGraph

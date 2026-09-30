@@ -2,12 +2,15 @@
 import os
 import sys
 
+import pytest
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
 from tradingagents.command_center.stock_picker_agent import StockPickerAgent
 
 
+@pytest.mark.integration
 def test_quick_scan_small():
     """Run quick_scan on a 3-ticker universe; assert we get candidates back."""
     sp = StockPickerAgent()

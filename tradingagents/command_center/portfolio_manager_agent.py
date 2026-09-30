@@ -27,9 +27,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-from tradingagents.agents.utils.rating import parse_rating
-from tradingagents.graph.trading_graph import TradingAgentsGraph
+from tradingagents.agents.rating import parse_rating
 from tradingagents.default_config import DEFAULT_CONFIG
+from tradingagents.graph.trading_graph import TradingAgentsGraph
 
 logger = logging.getLogger(__name__)
 

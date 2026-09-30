@@ -19,14 +19,14 @@ from typing import Any
 
 import yfinance as yf
 
-from tradingagents.dataflows.polymarket import (
+from tradingagents.dataflows.symbols import normalize_symbol
+from tradingagents.dataflows.vendors.polymarket import (
     GAMMA_BASE,  # noqa: F401  (re-exported for callers that want the source URL)
     _is_forward_looking,
     _parse_json_list,
     _request,
 )
-from tradingagents.dataflows.symbol_utils import normalize_symbol
-from tradingagents.dataflows.yfinance_news import _extract_article_data
+from tradingagents.dataflows.vendors.yahoo.news import _extract_article_data
 
 _CACHE: dict[str, tuple[float, Any]] = {}
 _CACHE_LOCK = threading.Lock()

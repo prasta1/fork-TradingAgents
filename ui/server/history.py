@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import re
 
-from tradingagents.agents.utils.memory import TradingMemoryLog
 from tradingagents.default_config import DEFAULT_CONFIG
+from tradingagents.memory import TradingMemoryLog
 
 
 def _log(config: dict | None = None) -> TradingMemoryLog:

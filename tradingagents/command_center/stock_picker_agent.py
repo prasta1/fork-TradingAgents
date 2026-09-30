@@ -23,12 +23,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-import yfinance as yf
-
 from tradingagents.command_center.portfolio_manager_agent import (
     PortfolioAnalysis,
     PortfolioManagerAgent,
 )
+from tradingagents.dataflows.vendors.yahoo.market import get_info_and_recent_history
 from tradingagents.default_config import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
@@ -104,9 +103,7 @@ class StockPickerAgent:
 
         for ticker in universe:
             try:
-                tk = yf.Ticker(ticker)
-                info = tk.info
-                hist = tk.history(period="5d", interval="1d")
+                info, hist = get_info_and_recent_history(ticker)
 
                 if len(hist) < 2:
                     continue

@@ -1,223 +1,223 @@
-"""Social-sentiment sources must not leak current posts into historical runs.
+"""Historical social sentiment must not leak current data into a backtest (#1220).
 
-Regressions for #1220: StockTwits and Reddit fetchers accepted no date
-window, so a historical analysis pulled today's posts and presented them as
-covering the requested historical period. Both fetchers now filter on the
-analysis window and return window-specific placeholders when nothing
-survives the filter (the public APIs cannot serve true historical data).
+StockTwits and Reddit fetchers pull only recent items, so for a historical run
+they must be trimmed to the analysis window (and yield a clear placeholder when
+nothing qualifies) rather than showing today's chatter as if it were from the
+as-of date. All three sources share dataflows.date_window.in_window.
 """
+from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-import tradingagents.dataflows.reddit as reddit
-import tradingagents.dataflows.stocktwits as stocktwits
-from tradingagents.agents.analysts.sentiment_analyst import _build_system_message
+from tradingagents.dataflows.date_window import in_window
+from tradingagents.dataflows.vendors import reddit, stocktwits
 
 
-def _epoch(date_str: str) -> int:
-    """Epoch seconds for UTC midnight of ``date_str`` (host-timezone independent)."""
-    return int(datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
-
-
-class _FakeResp:
-    """Minimal context-manager response whose ``read()`` returns JSON bytes."""
+class _JsonResp:
+    """Minimal urlopen() context-manager stub returning a JSON body."""
 
     def __init__(self, payload):
-        self._payload = payload
+        self._body = json.dumps(payload).encode()
 
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *a):
         return False
 
     def read(self):
-        return json.dumps(self._payload).encode("utf-8")
+        return self._body
 
 
-# ---------------------------------------------------------------------------
-# Window helper semantics (shared by both fetchers)
-# ---------------------------------------------------------------------------
+# --- shared window helper ---------------------------------------------------
+
+@pytest.mark.unit
+def test_in_window_bounds_and_exclusive_upper():
+    start = datetime(2026, 5, 1)
+    end = datetime(2026, 5, 9)
+    assert in_window(datetime(2026, 5, 5, tzinfo=UTC), start, end) is True
+    assert in_window(datetime(2026, 5, 9, 23, 59, tzinfo=UTC), start, end) is True
+    # exactly midnight after end -> excluded (no leak)
+    assert in_window(datetime(2026, 5, 10, 0, 0, tzinfo=UTC), start, end) is False
+    # offset-aware converted, not truncated: 05-10T01:00+05:00 == 05-09T20:00Z
+    assert in_window(datetime.fromisoformat("2026-05-10T01:00:00+05:00"), start, end) is True
 
 
 @pytest.mark.unit
-def test_stocktwits_in_window_boundaries():
-    start, end = stocktwits._window_epochs("2025-05-01", "2025-05-09")
-    assert stocktwits._in_window(_epoch("2025-05-05"), start, end) is True
-    assert stocktwits._in_window(_epoch("2025-05-09"), start, end) is True  # whole end day kept
-    assert stocktwits._in_window(_epoch("2025-06-01"), start, end) is False  # future blocked
-    assert stocktwits._in_window(_epoch("2025-05-10"), start, end) is False  # next midnight excluded
-    assert stocktwits._in_window(None, start, end) is False  # undated excluded in backtest
-    assert stocktwits._in_window(_epoch("2025-05-05"), None, None) is True  # no bounds -> pass
-    assert stocktwits._in_window(None, None, None) is True  # undated kept in live mode
+def test_in_window_undated_excluded_in_backtest_kept_live():
+    old = datetime(2026, 5, 9)
+    assert in_window(None, datetime(2026, 5, 1), old) is False       # historical
+    now = datetime.now(UTC)
+    assert in_window(None, now, now) is True                          # live
 
 
-@pytest.mark.unit
-def test_reddit_in_window_boundaries():
-    start, end = reddit._window_epochs("2025-05-01", "2025-05-09")
-    assert reddit._in_window(_epoch("2025-05-05"), start, end) is True
-    assert reddit._in_window(_epoch("2025-05-09"), start, end) is True
-    assert reddit._in_window(_epoch("2025-06-01"), start, end) is False
-    assert reddit._in_window(_epoch("2025-05-10"), start, end) is False
-    assert reddit._in_window(None, start, end) is False
-    assert reddit._in_window(_epoch("2025-05-05"), None, None) is True
-    assert reddit._in_window(None, None, None) is True  # undated kept in live mode
+# --- StockTwits -------------------------------------------------------------
 
-
-# ---------------------------------------------------------------------------
-# StockTwits end-to-end filtering
-# ---------------------------------------------------------------------------
-
-
-def _stocktwits_payload():
+def _msg(created_iso, sentiment=None):
     return {
-        "messages": [
-            {
-                "created_at": "2025-05-05T10:00:00Z",
-                "user": {"username": "u1"},
-                "entities": {"sentiment": {"basic": "Bullish"}},
-                "body": "INSIDE POST",
-            },
-            {
-                "created_at": "2025-06-01T10:00:00Z",
-                "user": {"username": "u2"},
-                "entities": {"sentiment": {"basic": "Bearish"}},
-                "body": "FUTURE POST",
-            },
-            {
-                "created_at": "2025-05-10T00:00:00Z",
-                "user": {"username": "u3"},
-                "entities": {},
-                "body": "NEXT DAY POST",
-            },
-        ]
+        "created_at": created_iso,
+        "user": {"username": "u"},
+        "entities": {"sentiment": {"basic": sentiment}},
+        "body": "text",
     }
 
 
 @pytest.mark.unit
-def test_stocktwits_filters_out_of_window_messages(monkeypatch):
-    monkeypatch.setattr(
-        stocktwits, "urlopen", lambda req, timeout=10.0: _FakeResp(_stocktwits_payload())
-    )
-    out = stocktwits.fetch_stocktwits_messages(
-        "AAPL", start_date="2025-05-01", end_date="2025-05-09"
-    )
-    assert "INSIDE POST" in out
-    assert "FUTURE POST" not in out
-    assert "NEXT DAY POST" not in out
+def test_stocktwits_historical_window_excludes_recent(monkeypatch):
+    # All messages are "today"; a run as-of a past week must show none of them.
+    recent = [_msg("2026-08-30T12:00:00Z", "Bullish"), _msg("2026-08-29T09:00:00Z")]
+    monkeypatch.setattr(stocktwits, "urlopen", lambda *a, **k: _JsonResp({"messages": recent}))
+    out = stocktwits.fetch_stocktwits_messages("AAPL", start_date="2026-05-01", end_date="2026-05-08")
+    assert "2026-05-01..2026-05-08" in out
+    assert "Bullish: 1" not in out  # the recent bullish message did not leak
+    # Coverage starts after the window: unavailable, never a claim of silence.
+    assert "unavailable" in out and "not an absence" in out
 
 
 @pytest.mark.unit
-def test_stocktwits_all_filtered_returns_window_placeholder(monkeypatch):
-    payload = {"messages": [_stocktwits_payload()["messages"][1]]}  # future only
-    monkeypatch.setattr(
-        stocktwits, "urlopen", lambda req, timeout=10.0: _FakeResp(payload)
-    )
-    out = stocktwits.fetch_stocktwits_messages(
-        "AAPL", start_date="2025-05-01", end_date="2025-05-09"
-    )
-    assert "no StockTwits messages found" in out
-    assert "requested window" in out
-    assert "FUTURE POST" not in out
+def test_stocktwits_live_window_keeps_in_range(monkeypatch):
+    msgs = [_msg("2026-05-05T12:00:00Z", "Bullish"), _msg("2026-05-07T09:00:00Z", "Bearish")]
+    monkeypatch.setattr(stocktwits, "urlopen", lambda *a, **k: _JsonResp({"messages": msgs}))
+    out = stocktwits.fetch_stocktwits_messages("AAPL", start_date="2026-05-01", end_date="2026-05-08")
+    assert "Total: 2" in out
 
 
 @pytest.mark.unit
-def test_stocktwits_live_window_keeps_recent_messages(monkeypatch):
-    # No date window: current behavior must be unchanged (no filtering).
-    monkeypatch.setattr(
-        stocktwits, "urlopen", lambda req, timeout=10.0: _FakeResp(_stocktwits_payload())
-    )
-    out = stocktwits.fetch_stocktwits_messages("AAPL")
-    assert "INSIDE POST" in out
-    assert "FUTURE POST" in out
-    assert "NEXT DAY POST" in out
+def test_stocktwits_no_window_is_unfiltered(monkeypatch):
+    msgs = [_msg("2026-08-30T12:00:00Z", "Bullish")]
+    monkeypatch.setattr(stocktwits, "urlopen", lambda *a, **k: _JsonResp({"messages": msgs}))
+    out = stocktwits.fetch_stocktwits_messages("AAPL")  # live caller, no dates
+    assert "Total: 1" in out
 
 
-# ---------------------------------------------------------------------------
-# Reddit end-to-end filtering
-# ---------------------------------------------------------------------------
+# --- Reddit -----------------------------------------------------------------
 
-
-def _reddit_posts():
-    return [
-        {
-            "title": "INSIDE POST",
-            "score": None,
-            "num_comments": None,
-            "created_utc": _epoch("2025-05-05"),
-            "selftext": "",
-            "source": "rss",
-        },
-        {
-            "title": "FUTURE POST",
-            "score": None,
-            "num_comments": None,
-            "created_utc": _epoch("2025-06-01"),
-            "selftext": "",
-            "source": "rss",
-        },
-        {
-            "title": "UNDATED POST",
-            "score": None,
-            "num_comments": None,
-            "created_utc": None,
-            "selftext": "",
-            "source": "rss",
-        },
-    ]
+def _epoch(date_str):
+    return int(datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=UTC).timestamp())
 
 
 @pytest.mark.unit
-def test_reddit_filters_out_of_window_posts(monkeypatch):
-    monkeypatch.setattr(reddit, "_fetch_subreddit", lambda *a, **k: _reddit_posts())
+def test_reddit_historical_window_excludes_recent(monkeypatch):
+    posts = [{"title": "NOW", "created_utc": _epoch("2026-08-30"), "source": "rss"}]
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: posts)
     out = reddit.fetch_reddit_posts(
-        "AAPL", start_date="2025-05-01", end_date="2025-05-09", inter_request_delay=0
+        "AAPL", subreddits=("stocks",),
+        start_date="2026-05-01", end_date="2026-05-08",
     )
-    assert "INSIDE POST" in out
-    assert "FUTURE POST" not in out
-    assert "UNDATED POST" not in out
-    assert "2025-05-01 to 2025-05-09" in out
+    assert "NOW" not in out
+    assert "unavailable" in out and "not an absence" in out
 
 
 @pytest.mark.unit
-def test_reddit_all_filtered_returns_window_placeholder(monkeypatch):
-    monkeypatch.setattr(
-        reddit, "_fetch_subreddit", lambda *a, **k: [_reddit_posts()[1]]
-    )
+def test_reddit_live_window_keeps_in_range(monkeypatch):
+    posts = [{"title": "INRANGE", "created_utc": _epoch("2026-05-05"), "source": "rss"}]
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: posts)
     out = reddit.fetch_reddit_posts(
-        "AAPL", start_date="2025-05-01", end_date="2025-05-09", inter_request_delay=0
+        "AAPL", subreddits=("stocks",),
+        start_date="2026-05-01", end_date="2026-05-08",
     )
-    assert "no Reddit posts found mentioning" in out
-    assert "2025-05-01 to 2025-05-09" in out
-    assert "FUTURE POST" not in out
+    assert "INRANGE" in out
+
+
+# --- coverage vs absence --------------------------------------------------------
+# The public feeds only serve recent items. When everything fetched postdates the
+# window the source cannot answer for that date; reporting "no posts" there is a
+# claim about the market that was never observed.
+
+@pytest.mark.unit
+def test_stocktwits_covered_but_empty_window_is_a_real_absence(monkeypatch):
+    # The stream reaches back before the window (an older message exists) yet
+    # nothing falls inside it: that is genuine silence.
+    msgs = [_msg("2026-08-30T12:00:00Z"), _msg("2026-04-20T12:00:00Z")]
+    monkeypatch.setattr(stocktwits, "urlopen", lambda *a, **k: _JsonResp({"messages": msgs}))
+    out = stocktwits.fetch_stocktwits_messages("AAPL", start_date="2026-05-01", end_date="2026-05-08")
+    assert "no StockTwits messages" in out
+    assert "unavailable" not in out
 
 
 @pytest.mark.unit
-def test_reddit_live_window_keeps_recent_posts(monkeypatch):
-    monkeypatch.setattr(reddit, "_fetch_subreddit", lambda *a, **k: _reddit_posts())
-    out = reddit.fetch_reddit_posts("AAPL", inter_request_delay=0)
-    assert "INSIDE POST" in out
-    assert "FUTURE POST" in out
-    assert "UNDATED POST" in out
-
-
-# ---------------------------------------------------------------------------
-# Sentiment analyst prompt labels the actual data window
-# ---------------------------------------------------------------------------
+def test_reddit_covered_but_empty_window_is_a_real_absence(monkeypatch):
+    posts = [{"title": "NOW", "created_utc": _epoch("2026-08-30"), "source": "rss"},
+             {"title": "OLD", "created_utc": _epoch("2026-04-20"), "source": "rss"}]
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: posts)
+    out = reddit.fetch_reddit_posts(
+        "AAPL", subreddits=("stocks",),
+        start_date="2026-05-01", end_date="2026-05-08",
+    )
+    assert "no reddit posts" in out.lower()
+    assert "unavailable" not in out
 
 
 @pytest.mark.unit
-def test_sentiment_prompt_labels_requested_window():
-    msg = _build_system_message(
-        ticker="AAPL",
-        start_date="2025-05-01",
-        end_date="2025-05-09",
-        news_block="N",
-        stocktwits_block="S",
-        reddit_block="R",
+def test_reddit_empty_feed_for_an_old_window_is_unavailable(monkeypatch):
+    # Search is limited to the last week, so an empty response says nothing
+    # about a window from months ago: there are no timestamps to go on, and the
+    # lookback bound alone must decide.
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: [])
+    out = reddit.fetch_reddit_posts(
+        "AAPL", subreddits=("stocks",),
+        start_date="2024-05-01", end_date="2024-05-08",
     )
-    assert "2025-05-01 to 2025-05-09" in msg
-    assert "past 7 days" not in msg
+    assert "unavailable" in out and "not an absence" in out
+
+
+@pytest.mark.unit
+def test_reddit_live_empty_feed_is_a_real_absence(monkeypatch):
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: [])
+    out = reddit.fetch_reddit_posts("AAPL", subreddits=("stocks",))
+    assert "no reddit posts" in out.lower() and "past 7 days" in out
+    assert "unavailable" not in out
+
+
+@pytest.mark.unit
+def test_stocktwits_empty_stream_for_a_past_window_is_unavailable(monkeypatch):
+    monkeypatch.setattr(stocktwits, "urlopen", lambda *a, **k: _JsonResp({"messages": []}))
+    out = stocktwits.fetch_stocktwits_messages("AAPL", start_date="2026-05-01", end_date="2026-05-08")
+    assert "unavailable" in out and "not an absence" in out
+
+
+@pytest.mark.unit
+def test_reddit_window_straddling_the_lookback_is_unavailable(monkeypatch):
+    # Ten days ago through five days ago: the week-long search never reaches the
+    # first three days, so an empty result cannot stand for the whole window.
+    from datetime import timedelta
+    today = datetime.now(UTC).date()
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: [])
+    out = reddit.fetch_reddit_posts(
+        "AAPL", subreddits=("stocks",),
+        start_date=str(today - timedelta(days=10)), end_date=str(today - timedelta(days=5)),
+    )
+    assert "unavailable" in out
+
+
+@pytest.mark.unit
+def test_reddit_standard_week_window_empty_is_a_real_absence(monkeypatch):
+    # The graph's window is [trade_date - 7, trade_date]; the week-long search
+    # covers it, so an empty result is genuine silence.
+    from datetime import timedelta
+    today = datetime.now(UTC).date()
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: [])
+    out = reddit.fetch_reddit_posts(
+        "AAPL", subreddits=("stocks",),
+        start_date=str(today - timedelta(days=7)), end_date=str(today),
+    )
+    assert "no reddit posts" in out.lower() and "unavailable" not in out
+
+
+@pytest.mark.unit
+def test_reddit_full_page_does_not_vouch_for_older_days(monkeypatch):
+    # 100 posts from today say nothing about five days ago: the page may have
+    # cut older matches off, so the window stays unavailable.
+    from datetime import timedelta
+    today = datetime.now(UTC).date()
+    ts = _epoch(str(today))
+    page = [{"title": f"T{i}", "created_utc": ts, "subreddit": "stocks"} for i in range(reddit._FEED_PAGE)]
+    monkeypatch.setattr(reddit, "_fetch_subreddit_rss", lambda *a, **k: page)
+    out = reddit.fetch_reddit_posts(
+        "AAPL", subreddits=("stocks",),
+        start_date=str(today - timedelta(days=6)), end_date=str(today - timedelta(days=5)),
+    )
+    assert "unavailable" in out and "no reddit posts" not in out.lower()
