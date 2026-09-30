@@ -104,9 +104,15 @@ export default function TradeDesk({ run, ticker, boot }) {
     time_in_force: timeInForce,
   }
 
+  // Brokers reject prices finer than a cent. Flag it here rather than silently
+  // rounding a price the user typed.
+  const activePrice = orderType === 'LIMIT' ? limitPrice : orderType === 'STOP' ? stopPrice : ''
+  const priceTooPrecise = /\.\d{3,}$/.test(String(activePrice).trim())
+
   const ticketValid =
     order.symbol &&
     Number(quantity) > 0 &&
+    !priceTooPrecise &&
     (orderType !== 'LIMIT' || Number(limitPrice) > 0) &&
     (orderType !== 'STOP' || Number(stopPrice) > 0)
 
@@ -401,6 +407,13 @@ export default function TradeDesk({ run, ticker, boot }) {
                   </select>
                 </Field>
             </div>
+
+            {priceTooPrecise && (
+              <div style={{ fontSize: 11.5, lineHeight: 1.55, color: C.red, marginTop: -6 }}>
+                Use at most two decimal places for the {orderType === 'STOP' ? 'stop' : 'limit'} price
+                (e.g. {Number(activePrice).toFixed(2)}).
+              </div>
+            )}
 
             {hasProposal && run.request.ticker === order.symbol && (decision.price_target || decision.stop) && (
               <div style={{ fontFamily: MONO, fontSize: 11.5, color: C.t4, lineHeight: 1.55, marginTop: -6 }}>
