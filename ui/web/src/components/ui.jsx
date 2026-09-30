@@ -1,3 +1,4 @@
+import { Children, cloneElement, isValidElement, useId } from 'react'
 import { C, MONO, label9, label95 } from '../theme.js'
 
 /** Bordered card with an optional header row. */
@@ -128,6 +129,38 @@ export function Btn({ variant = 'primary', onClick, disabled, children, style, t
   )
 }
 
+/**
+ * A load that failed, shown as a failure — never as empty data — with the
+ * reason and a way to try again.
+ * @param {{what: string, error: {detail?: string, message?: string}, onRetry?: () => void}} props
+ */
+export function LoadError({ what, error, onRetry }) {
+  return (
+    <div
+      role="alert"
+      style={{
+        border: `1px solid ${C.redBorder}`,
+        background: C.redPanel,
+        borderRadius: 8,
+        padding: '13px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+      }}
+    >
+      <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.55, color: C.t1, wordBreak: 'break-word' }}>
+        <strong style={{ color: C.red }}>Couldn't load {what}.</strong>{' '}
+        {error?.detail || error?.message || 'The console server did not answer.'}
+      </div>
+      {onRetry && (
+        <Btn variant="ghost" onClick={onRetry} style={{ color: C.text }}>
+          Retry
+        </Btn>
+      )}
+    </div>
+  )
+}
+
 /** Dashed placeholder for "nothing here yet" states. */
 export function Empty({ children, pad = 46 }) {
   return (
@@ -148,10 +181,19 @@ export function Empty({ children, pad = 46 }) {
 
 /** Labelled form field with an optional hint below. */
 export function Field({ label, hint, children }) {
+  // Tie the label to the first control so clicking it focuses the input and
+  // screen readers announce the label. Later children (e.g. scan buttons) keep
+  // their own names.
+  const autoId = useId()
+  const [first, ...rest] = Children.toArray(children)
+  const id = isValidElement(first) ? first.props.id || autoId : undefined
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-      <label style={label95}>{label}</label>
-      {children}
+      <label htmlFor={id} style={label95}>
+        {label}
+      </label>
+      {isValidElement(first) && !first.props.id ? cloneElement(first, { id }) : first}
+      {rest}
       {hint && <span style={{ fontSize: 10.5, color: C.t6 }}>{hint}</span>}
     </div>
   )

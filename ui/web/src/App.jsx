@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from './api.js'
 import { C, MONO, label9 } from './theme.js'
+import { LoadError } from './components/ui.jsx'
 import { useRun } from './useRun.js'
 
 import DebateRoom from './screens/DebateRoom.jsx'
@@ -69,11 +70,17 @@ export default function App() {
   }, [])
 
   if (bootError) {
+    // Every screen needs bootstrap data, so this stays a full-page stop; it
+    // says why and how to recover. Use the venv's uvicorn: Homebrew's lacks
+    // this project's dependencies.
     return (
-      <div style={{ padding: 40, fontFamily: MONO, fontSize: 13, color: C.red }}>
-        Console backend unreachable — {bootError}
-        <div style={{ color: C.t5, marginTop: 10 }}>
-          Start it with: uvicorn ui.server.app:app --port 8551
+      <div style={{ padding: 40, maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <LoadError what="the console" error={{ detail: bootError }} onRetry={() => window.location.reload()} />
+        <div style={{ fontSize: 12.5, color: C.t2, lineHeight: 1.6 }}>
+          If the server isn't running, start it from the project folder:
+          <div style={{ fontFamily: MONO, color: C.text, marginTop: 6 }}>
+            .venv/bin/uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
+          </div>
         </div>
       </div>
     )

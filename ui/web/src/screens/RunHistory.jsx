@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
-import { Empty, Panel } from '../components/ui.jsx'
+import { Empty, LoadError, Panel } from '../components/ui.jsx'
 import { C, MONO, label95, pnlColor, ratingStyle } from '../theme.js'
 
 const COLS = '.9fr .7fr 1fr .7fr .8fr .8fr'
 
 export default function RunHistory() {
   const [entries, setEntries] = useState(null)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    api.history().then(setEntries).catch(() => setEntries([]))
-  }, [])
+  // A failed fetch keeps entries null, so it can't read as "no runs yet".
+  const load = () => {
+    setError(null)
+    setEntries(null)
+    api.history().then(setEntries).catch(setError)
+  }
+  useEffect(load, [])
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 26px 40px' }}>
@@ -31,7 +36,9 @@ export default function RunHistory() {
           into the Portfolio Manager prompt.
         </p>
 
-        {entries === null && (
+        {error && <LoadError what="run history" error={error} onRetry={load} />}
+
+        {entries === null && !error && (
           <div style={{ fontFamily: MONO, fontSize: 12, color: C.t6 }}>loading history…</div>
         )}
 

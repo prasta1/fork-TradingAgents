@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, fmtMoney, fmtNum, fmtPct } from '../api.js'
-import { Btn, Field, L9, Panel, inputStyle } from '../components/ui.jsx'
+import { Btn, Field, L9, LoadError, Panel, inputStyle } from '../components/ui.jsx'
 import { C, MONO, label95, ratingStyle } from '../theme.js'
 
 // Analyst node -> the card it fills on this screen.
@@ -16,18 +16,43 @@ export default function ResearchHub({ ticker, setTicker, run, goto }) {
   const [watchlist, setWatchlist] = useState([])
   const [input, setInput] = useState(ticker)
   const [loading, setLoading] = useState(true)
+  const [quoteError, setQuoteError] = useState(null)
+  const [watchError, setWatchError] = useState(null)
 
-  useEffect(() => {
-    setInput(ticker)
+  const loadQuote = () => {
     setLoading(true)
+    setQuoteError(null)
     api
       .quote(ticker)
       .then(setData)
-      .catch(() => setData(null))
+      .catch((err) => {
+        setData(null)
+        setQuoteError(err)
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    setInput(ticker)
+    loadQuote()
+    // loadQuote reads the current ticker; re-run only when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticker])
 
-  const loadWatchlist = () => api.watchlist().then(setWatchlist).catch(() => setWatchlist([]))
+  // Watchlist reads and edits all report failure instead of looking empty or
+  // silently doing nothing.
+  const loadWatchlist = () => {
+    setWatchError(null)
+    return api.watchlist().then(setWatchlist).catch(setWatchError)
+  }
+  const changeWatch = async (call) => {
+    try {
+      await call()
+      await loadWatchlist()
+    } catch (err) {
+      setWatchError(err)
+    }
+  }
   useEffect(() => {
     loadWatchlist()
   }, [])
@@ -41,6 +66,7 @@ export default function ResearchHub({ ticker, setTicker, run, goto }) {
     <div style={{ flex: 1, overflowY: 'auto', padding: '24px 26px 40px' }}>
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {quoteError && <LoadError what={`${ticker} market data`} error={quoteError} onRetry={loadQuote} />}
           <Panel>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
@@ -279,17 +305,19 @@ export default function ResearchHub({ ticker, setTicker, run, goto }) {
             right={
               <button
                 className="link-hover"
-                onClick={async () => {
-                  await api.addWatch(ticker)
-                  loadWatchlist()
-                }}
+                onClick={() => changeWatch(() => api.addWatch(ticker))}
                 style={{ fontSize: 11.5, color: C.link, cursor: 'pointer' }}
               >
                 + Add {ticker}
               </button>
             }
           >
-            {watchlist.length === 0 && (
+            {watchError && (
+              <div style={{ padding: 12 }}>
+                <LoadError what="the watchlist" error={watchError} onRetry={loadWatchlist} />
+              </div>
+            )}
+            {watchlist.length === 0 && !watchError && (
               <div style={{ padding: 16, fontFamily: MONO, fontSize: 11, color: C.t7 }}>
                 watchlist is empty
               </div>
@@ -301,16 +329,20 @@ export default function ResearchHub({ ticker, setTicker, run, goto }) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '11px 16px',
+                  padding: '0 16px 0 0',
                   borderBottom: `1px solid ${C.border}`,
-                  cursor: 'pointer',
                 }}
-                onClick={() => setTicker(w.sym)}
               >
-                <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 500, color: C.text }}>
-                  {w.sym}
-                </span>
-                <div style={{ marginLeft: 'auto', textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  onClick={() => setTicker(w.sym)}
+                  style={{ flex: 1, textAlign: 'left', padding: '11px 16px', cursor: 'pointer' }}
+                  aria-label={`Research ${w.sym}`}
+                >
+                  <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 500, color: C.text }}>
+                    {w.sym}
+                  </span>
+                </button>
+                <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.text }}>
                     {w.last ? fmtNum(w.last) : '—'}
                   </span>
@@ -326,13 +358,10 @@ export default function ResearchHub({ ticker, setTicker, run, goto }) {
                     {w.change_pct ? `${Number(w.change_pct).toFixed(2)}%` : '—'}
                   </span>
                   <button
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await api.removeWatch(w.sym)
-                      loadWatchlist()
-                    }}
-                    style={{ cursor: 'pointer', color: C.t7, fontSize: 14, lineHeight: 1 }}
+                    onClick={() => changeWatch(() => api.removeWatch(w.sym))}
+                    style={{ cursor: 'pointer', color: C.t2, fontSize: 14, lineHeight: 1, padding: 4 }}
                     title="Remove"
+                    aria-label={`Remove ${w.sym} from watchlist`}
                   >
                     ×
                   </button>

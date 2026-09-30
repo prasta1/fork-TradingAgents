@@ -109,10 +109,11 @@ function HoldingRow({ h, onClick }) {
   const pl = pnlColor(h.pl)
   const rs = ratingStyle(h.rating)
   return (
-    <div
+    <button
+      type="button"
       className="row-hover"
       onClick={onClick}
-      style={{ display: 'grid', gridTemplateColumns: COLS, alignItems: 'center', padding: '10px 18px', borderBottom: `1px solid ${C.border}`, cursor: 'pointer' }}
+      style={{ width: '100%', textAlign: 'left', display: 'grid', gridTemplateColumns: COLS, alignItems: 'center', padding: '10px 18px', borderBottom: `1px solid ${C.border}`, cursor: 'pointer' }}
     >
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <Mono size={13} c={C.text}>{h.sym}</Mono>
@@ -139,7 +140,7 @@ function HoldingRow({ h, onClick }) {
           <Mono size={10.5} c={C.t7}>never rated</Mono>
         )}
       </span>
-    </div>
+    </button>
   )
 }
 

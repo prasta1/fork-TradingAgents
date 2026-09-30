@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import BrokerPanel from '../components/BrokerPanel.jsx'
-import { Panel } from '../components/ui.jsx'
+import { LoadError, Panel } from '../components/ui.jsx'
 import { C, MONO } from '../theme.js'
 
 export default function Settings() {
   const [data, setData] = useState(null)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    api.settings().then(setData).catch(() => setData(null))
-  }, [])
+  const load = () => {
+    setError(null)
+    api.settings().then(setData).catch(setError)
+  }
+  useEffect(load, [])
+
+  if (error) {
+    return (
+      <div style={{ flex: 1, padding: '24px 26px', maxWidth: 860 }}>
+        <LoadError what="settings" error={error} onRetry={load} />
+      </div>
+    )
+  }
 
   if (!data) {
     return (
