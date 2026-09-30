@@ -118,7 +118,7 @@ export default function RunHistory() {
                           paddingLeft: 12,
                           fontSize: 12.5,
                           lineHeight: 1.6,
-                          color: '#7d90a8',
+                          color: C.t3,
                           textWrap: 'pretty',
                         }}
                       >

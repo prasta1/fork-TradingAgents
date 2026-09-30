@@ -29,7 +29,7 @@ const TITLES = {
   portfolio: ['Portfolio', 'positions the agents trade against'],
   holdings: ['Live portfolio', 'every account · API + statements'],
   scorecard: ['Scorecard', 'Wealthfront trades vs agent ratings'],
-  trade: ['Trade desk', 'order entry · Public.com'],
+  trade: ['Trade desk', 'order entry'],
   research: ['Research hub', 'analyst intelligence'],
   debate: ['Debate room', 'bull vs bear · research manager'],
   deploy: ['Deploy run', 'bundle configuration'],
@@ -112,7 +112,10 @@ export default function App() {
   }
 
   const running = runCtl.run.status === 'running'
-  const [title, sub] = TITLES[screen]
+  const [title, baseSub] = TITLES[screen]
+  // Name the broker actually in use rather than a hard-coded one.
+  const brokerLabel = (boot.brokers || []).find((b) => b.name === boot.active_broker)?.label
+  const sub = screen === 'trade' && brokerLabel ? `${baseSub} · ${brokerLabel}` : baseSub
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: C.bg }}>

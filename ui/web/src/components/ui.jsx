@@ -90,7 +90,7 @@ export function Btn({ variant = 'green', onClick, disabled, children, style, tit
     // Filled red for committing a sell, so it never reads as the green buy action.
     sell: {
       background: disabled ? C.border2 : C.red,
-      color: disabled ? C.t5 : '#3a0f0c',
+      color: disabled ? C.t5 : C.onFill,
       padding: '9px 16px',
       fontSize: 12.5,
     },
@@ -206,7 +206,7 @@ export function MockupBadge({ children }) {
         padding: '9px 14px',
         borderRadius: 4,
         border: `1px solid ${C.amberDim}`,
-        background: 'rgba(168,129,63,0.09)',
+        background: C.amberBg,
         marginBottom: 18,
       }}
     >

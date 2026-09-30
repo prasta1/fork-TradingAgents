@@ -1,59 +1,78 @@
-// Design tokens lifted from the TradingAgents Console design.
+// Design tokens.
 // Every screen styles inline from these, matching how the design was authored.
 
+// Catppuccin Mocha (https://github.com/catppuccin/catppuccin). Keys keep their
+// old names so every screen picks up the palette; see DESIGN.md for the roles.
+// Mauve belongs only to agent forecasts; green/red only to money and side.
 export const C = {
   // surfaces
-  bg: '#051424',
-  sidebar: '#010f1f',
-  panel: '#0d1c2d',
-  panelAlt: '#0a1a2b',
-  panelDeep: '#081726',
-  panelHi: '#122131',
-  inputBg: '#010f1f',
+  bg: '#181825', // mantle
+  sidebar: '#11111b', // crust
+  panel: '#1e1e2e', // base
+  panelAlt: '#1e1e2e',
+  panelDeep: '#181825',
+  panelHi: '#313244', // surface0
+  inputBg: '#11111b',
 
   // borders
-  border: '#14243a',
-  border2: '#1c2b3c',
-  border3: '#2f4157',
+  border: '#313244',
+  border2: '#313244',
+  border3: '#6c7086', // overlay0: >=3:1 against inputs, as a control edge needs
 
-  // text ramp, lightest to darkest
-  text: '#d4e4fa',
-  t1: '#b0c3da',
-  t2: '#93a4bb',
-  t3: '#7d90a8',
-  t4: '#6d819a',
-  t5: '#5c728c',
-  t6: '#4a607c',
-  t7: '#3d5470',
-  t8: '#2f4157',
-  t9: '#243549',
+  // text ramp, lightest to darkest. t1-t7 all pass 4.4:1 or better on base;
+  // t8/t9 are for dots and rules only, never text.
+  text: '#cdd6f4',
+  t1: '#bac2de',
+  t2: '#a6adc8',
+  t3: '#9399b2',
+  t4: '#9399b2',
+  t5: '#9399b2',
+  t6: '#7f849c',
+  t7: '#7f849c',
+  t8: '#6c7086',
+  t9: '#585b70',
 
-  // accents
-  green: '#4edea3',
-  greenHover: '#6ffbbe',
-  greenFg: '#003824',
-  greenBg: '#00311f',
-  greenDeep: '#00170e',
-  greenBorder: '#2f5a4a',
-  greenPanel: '#0e2320',
-  bullPanel: '#0b1f1b',
-  bullBorder: '#1f3a2e',
+  // text on any filled accent (buttons, selected segments)
+  onFill: '#11111b',
 
-  red: '#ffb3ad',
-  redBg: '#390003',
-  redPanel: '#1e1315',
-  redBorder: '#3a2124',
+  // money: gain / buy
+  green: '#a6e3a1',
+  greenHover: '#c0ecbc',
+  greenFg: '#11111b',
+  greenBg: '#2a3a31',
+  greenDeep: '#1c2a24',
+  greenBorder: '#4a6a55',
+  greenPanel: '#222d2b',
+  bullPanel: '#212b2a',
+  bullBorder: '#3b5446',
 
-  amber: '#e8c07a',
-  amberDim: '#a8813f',
+  // money: loss / sell
+  red: '#f38ba8',
+  redHover: '#f6a8bd',
+  redBg: '#3b2635',
+  redPanel: '#29202c',
+  redBorder: '#5a3445',
 
-  // selection
-  selBorder: '#4a6b86',
-  selBg: '#16283b',
-  link: '#bec6e0',
+  // caution, and later agent-acted advisories
+  amber: '#f9e2af', // yellow
+  amberDim: '#fab387', // peach
+  amberBg: '#2e2a2c',
+
+  // agent forecasts only
+  mauve: '#cba6f7',
+  mauveBg: '#2b2540',
+  mauveBand: '#332c47',
+
+  // selection, focus, links
+  blue: '#89b4fa',
+  selBorder: '#89b4fa',
+  selBg: '#29304a',
+  link: '#89b4fa',
 }
 
-export const MONO = "'JetBrains Mono', ui-monospace, SFMono-Regular, monospace"
+// System faces: SF on the Mac this runs on, and no font download (local-first).
+export const SANS = "ui-sans-serif, -apple-system, 'SF Pro Text', system-ui, sans-serif"
+export const MONO = "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace"
 
 // Rating -> colour + chip background, used everywhere a rating is shown.
 export function ratingStyle(rating) {
@@ -79,7 +98,7 @@ export const label9 = {
   fontSize: 9,
   fontWeight: 700,
   letterSpacing: '.09em',
-  color: C.t7,
+  color: C.t5,
 }
 
 export const label95 = {

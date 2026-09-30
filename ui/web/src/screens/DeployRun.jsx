@@ -480,7 +480,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                 fontFamily: MONO,
                 fontSize: 11,
                 lineHeight: 1.7,
-                color: '#8fa6c0',
+                color: C.t2,
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
                 maxHeight: 340,
