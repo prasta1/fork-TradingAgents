@@ -31,8 +31,22 @@ function detectAssetType(ticker) {
   return CRYPTO_SUFFIXES.some((s) => upper.endsWith(s)) ? 'crypto' : 'stock'
 }
 
+const LAST_LAUNCH_KEY = 'deploy.lastLaunch'
+
+/** LLM settings from the last successful launch, or {} if none/unreadable. */
+function lastLaunch() {
+  try {
+    return JSON.parse(localStorage.getItem(LAST_LAUNCH_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
 export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTradeDate, start, goto }) {
-  const { defaults, analysts: analystOptions } = boot
+  const { defaults: serverDefaults, analysts: analystOptions } = boot
+  // This screen unmounts when a run starts, so without this every visit would
+  // reset the model choice to the server config.
+  const defaults = { ...serverDefaults, ...lastLaunch() }
   const [providers, setProviders] = useState([])
   const [provider, setProvider] = useState(defaults.llm_provider)
   const [deepModel, setDeepModel] = useState(defaults.deep_think_llm)
@@ -140,6 +154,15 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
         max_risk_discuss_rounds: riskRounds,
         checkpoint_enabled: checkpoint,
       })
+      localStorage.setItem(
+        LAST_LAUNCH_KEY,
+        JSON.stringify({
+          llm_provider: provider,
+          deep_think_llm: deepModel,
+          quick_think_llm: quickModel,
+          backend_url: backendUrl,
+        })
+      )
       goto('run')
     } catch (err) {
       setError(err.detail || err.message)
