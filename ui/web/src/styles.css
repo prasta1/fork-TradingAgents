@@ -11,19 +11,20 @@ body,
 }
 
 body {
-  background: #051424;
-  color: #d4e4fa;
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  background: #181825;
+  color: #cdd6f4;
+  font-family: ui-sans-serif, -apple-system, 'SF Pro Text', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: #bec6e0;
+  color: #89b4fa;
   text-decoration: none;
 }
 
 a:hover {
-  color: #4edea3;
+  color: #b4befe;
 }
 
 button {
@@ -37,7 +38,21 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+/* One focus ring everywhere, in Catppuccin Blue; mouse clicks don't show it. */
+:focus {
   outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid #89b4fa;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #45475a;
+  color: #cdd6f4;
 }
 
 ::-webkit-scrollbar {
@@ -46,12 +61,21 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1c2b3c;
+  background: #45475a;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 @keyframes tapulse {
@@ -67,34 +91,49 @@ textarea {
 /* Hover affordances the design expresses per-element; centralised here so the
    JSX stays close to the original inline-style markup. */
 .row-hover:hover {
-  background: #122131;
+  background: #313244;
 }
 
 .nav-item:hover {
-  background: #0d1c2d;
+  background: #1e1e2e;
 }
 
 .btn-green:hover {
-  background: #6ffbbe !important;
+  background: #c0ecbc !important;
+}
+
+.btn-primary:hover {
+  background: #a8c7fb !important;
 }
 
 .btn-sell:hover {
-  background: #ffcdc8 !important;
+  background: #f6a8bd !important;
 }
 
 .btn-ghost:hover {
-  background: #122131;
+  background: #313244;
 }
 
 .link-hover:hover {
-  color: #4edea3;
+  color: #b4befe;
+}
+
+/* Ticket docks beside the chart; once they can't share a row it takes the full width. */
+.td-ticket {
+  flex: 0 0 380px;
+}
+
+@media (max-width: 1200px) {
+  .td-ticket {
+    flex: 1 1 100%;
+  }
 }
 
 /* Markdown rendered from agent reports, styled to the design's type scale. */
 .md {
   font-size: 13.5px;
   line-height: 1.68;
-  color: #b0c3da;
+  color: #bac2de;
   text-wrap: pretty;
   max-width: 720px;
 }
@@ -103,7 +142,7 @@ textarea {
 .md h2,
 .md h3,
 .md h4 {
-  color: #d4e4fa;
+  color: #cdd6f4;
   font-size: 13.5px;
   font-weight: 600;
   margin: 20px 0 8px;
@@ -133,22 +172,22 @@ textarea {
 }
 
 .md strong {
-  color: #d4e4fa;
+  color: #cdd6f4;
   font-weight: 600;
 }
 
 .md code {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 12px;
-  background: #122131;
+  background: #313244;
   padding: 1px 5px;
   border-radius: 3px;
-  color: #93a4bb;
+  color: #a6adc8;
 }
 
 .md pre {
-  background: #010f1f;
-  border: 1px solid #1c2b3c;
+  background: #11111b;
+  border: 1px solid #45475a;
   border-radius: 6px;
   padding: 12px 14px;
   overflow-x: auto;
@@ -168,34 +207,34 @@ textarea {
 
 .md th,
 .md td {
-  border-bottom: 1px solid #14243a;
+  border-bottom: 1px solid #313244;
   padding: 7px 10px;
   text-align: left;
 }
 
 .md th {
-  color: #5c728c;
+  color: #9399b2;
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  background: #122131;
+  background: #313244;
 }
 
 .md td {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  color: #b0c3da;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  color: #bac2de;
 }
 
 .md blockquote {
   margin: 0 0 14px;
   padding-left: 12px;
-  border-left: 2px solid #1c2b3c;
-  color: #7d90a8;
+  border-left: 2px solid #45475a;
+  color: #9399b2;
 }
 
 .md hr {
   border: none;
-  border-top: 1px solid #14243a;
+  border-top: 1px solid #313244;
   margin: 18px 0;
 }

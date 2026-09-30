@@ -228,8 +228,8 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     textAlign: 'left',
                     opacity: disabled ? 0.45 : 1,
-                    border: `1px solid ${on ? C.greenBorder : C.border2}`,
-                    background: on ? C.greenPanel : C.panelDeep,
+                    border: `1px solid ${on ? C.selBorder : C.border2}`,
+                    background: on ? C.selBg : C.panelDeep,
                   }}
                 >
                   <span
@@ -239,13 +239,13 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                       borderRadius: 3,
                       flex: 'none',
                       marginTop: 1,
-                      border: `1px solid ${on ? C.green : C.border3}`,
-                      background: on ? C.green : 'transparent',
+                      border: `1px solid ${on ? C.blue : C.border3}`,
+                      background: on ? C.blue : 'transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 10,
-                      color: C.greenFg,
+                      color: C.onFill,
                       fontWeight: 700,
                     }}
                   >
@@ -288,7 +288,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                     width: 6,
                     height: 6,
                     borderRadius: 9999,
-                    background: providerOk(providers, provider) ? C.green : C.amber,
+                    background: providerOk(providers, provider) ? C.blue : C.amber,
                   }}
                 />
                 <span style={{ fontFamily: MONO, fontSize: 10.5, color: C.t4 }}>
@@ -323,8 +323,8 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                           width: 12,
                           height: 12,
                           borderRadius: 9999,
-                          border: `1px solid ${on ? C.green : C.border3}`,
-                          background: on ? C.green : 'transparent',
+                          border: `1px solid ${on ? C.blue : C.border3}`,
+                          background: on ? C.blue : 'transparent',
                           flex: 'none',
                         }}
                       />
@@ -425,7 +425,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                   cursor: 'pointer',
                   padding: 2,
                   display: 'flex',
-                  background: checkpoint ? C.green : C.border2,
+                  background: checkpoint ? C.blue : C.border2,
                   justifyContent: checkpoint ? 'flex-end' : 'flex-start',
                 }}
               >
@@ -480,7 +480,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
                 fontFamily: MONO,
                 fontSize: 11,
                 lineHeight: 1.7,
-                color: '#8fa6c0',
+                color: C.t2,
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
                 maxHeight: 340,
@@ -590,7 +590,7 @@ function ModelSourceLine({ models, loading, onRefresh }) {
           height: 6,
           borderRadius: 9999,
           flex: 'none',
-          background: models.error ? C.red : models.source === 'live' ? C.green : C.t8,
+          background: models.error ? C.red : models.source === 'live' ? C.blue : C.t8,
         }}
       />
       <span
@@ -644,9 +644,9 @@ function RoundControl({ label, hint, value, onChange, derived }) {
               cursor: 'pointer',
               fontFamily: MONO,
               fontSize: 12,
-              border: `1px solid ${value === n ? C.green : C.border3}`,
-              background: value === n ? C.greenBg : C.inputBg,
-              color: value === n ? C.green : C.t3,
+              border: `1px solid ${value === n ? C.blue : C.border3}`,
+              background: value === n ? C.selBg : C.inputBg,
+              color: value === n ? C.blue : C.t3,
             }}
           >
             {n}

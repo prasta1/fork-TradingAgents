@@ -72,8 +72,16 @@ const BTN_BASE = {
   whiteSpace: 'nowrap',
 }
 
-export function Btn({ variant = 'green', onClick, disabled, children, style, title }) {
+// Default is Blue: a primary action that isn't money. `green` / `sell` are for
+// committing a buy or sell only.
+export function Btn({ variant = 'primary', onClick, disabled, children, style, title }) {
   const variants = {
+    primary: {
+      background: disabled ? C.border2 : C.blue,
+      color: disabled ? C.t5 : C.onFill,
+      padding: '9px 16px',
+      fontSize: 12.5,
+    },
     green: {
       background: disabled ? C.border2 : C.green,
       color: disabled ? C.t5 : C.greenFg,
@@ -90,7 +98,7 @@ export function Btn({ variant = 'green', onClick, disabled, children, style, tit
     // Filled red for committing a sell, so it never reads as the green buy action.
     sell: {
       background: disabled ? C.border2 : C.red,
-      color: disabled ? C.t5 : '#3a0f0c',
+      color: disabled ? C.t5 : C.onFill,
       padding: '9px 16px',
       fontSize: 12.5,
     },
@@ -107,7 +115,7 @@ export function Btn({ variant = 'green', onClick, disabled, children, style, tit
       title={title}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={disabled || !['green', 'sell'].includes(variant) ? 'btn-ghost' : `btn-${variant}`}
+      className={disabled || !['primary', 'green', 'sell'].includes(variant) ? 'btn-ghost' : `btn-${variant}`}
       style={{
         ...BTN_BASE,
         ...variants[variant],
@@ -206,7 +214,7 @@ export function MockupBadge({ children }) {
         padding: '9px 14px',
         borderRadius: 4,
         border: `1px solid ${C.amberDim}`,
-        background: 'rgba(168,129,63,0.09)',
+        background: C.amberBg,
         marginBottom: 18,
       }}
     >

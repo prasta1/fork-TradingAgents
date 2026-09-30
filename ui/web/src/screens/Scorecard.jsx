@@ -7,7 +7,7 @@ import { C, MONO, label95, ratingStyle } from '../theme.js'
 const AGREE_STYLE = {
   agree: { label: 'AI AGREES', c: C.green, bg: C.greenBg },
   disagree: { label: 'AI DISAGREES', c: C.red, bg: C.redBg },
-  neutral: { label: 'NEUTRAL', c: C.amber, bg: '#241a0a' },
+  neutral: { label: 'NEUTRAL', c: C.amber, bg: C.amberBg },
   unrated: { label: 'NO AI RUN', c: C.t5, bg: C.panelDeep },
 }
 

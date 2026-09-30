@@ -6,8 +6,9 @@ import { C, MONO, label9, ratingStyle } from '../theme.js'
 const STATUS = {
   idle: ['IDLE', C.t7, C.border2, C.panel, 'none'],
   queued: ['QUEUED', C.amber, C.amberDim, C.panel, 'tapulse 1.4s infinite'],
-  running: ['RUNNING', C.green, C.greenBg, C.greenDeep, 'tapulse 1.1s infinite'],
-  complete: ['COMPLETE', C.green, C.greenBg, C.greenDeep, 'none'],
+  // Agent work is mauve, like everything an agent produces.
+  running: ['RUNNING', C.mauve, C.mauveBg, C.mauveBand, 'tapulse 1.1s infinite'],
+  complete: ['COMPLETE', C.mauve, C.mauveBg, C.mauveBand, 'none'],
   cancelled: ['CANCELLED', C.amber, C.amberDim, C.panel, 'none'],
   error: ['ERROR', C.red, C.redBorder, C.redPanel, 'none'],
 }
@@ -302,7 +303,7 @@ function NodeButton({ node, status, elapsed, selected, onClick }) {
           height: 6,
           borderRadius: 9999,
           flex: 'none',
-          background: complete || active ? C.green : C.t9,
+          background: complete || active ? C.mauve : C.t9,
           animation: active ? 'tapulse 1s infinite' : 'none',
         }}
       />
@@ -370,7 +371,7 @@ function ReportPane({ run, node, error }) {
             padding: '5px 10px',
             borderRadius: 4,
             border: `1px solid ${C.border2}`,
-            color: status === 'complete' ? C.green : status === 'running' ? C.amber : C.t7,
+            color: status === 'complete' || status === 'running' ? C.mauve : C.t7,
           }}
         >
           {status === 'complete' ? 'complete' : status === 'running' ? 'running' : 'pending'}
@@ -440,7 +441,7 @@ function DecisionCard({ run, remaining, onThesis, onExecute }) {
           <MiniStat
             k="STOP"
             v={decision.stop ? fmtMoney(decision.stop) : '—'}
-            color={decision.stop ? C.red : C.t1}
+            color={decision.stop ? C.mauve : C.t1}
           />
           <MiniStat k="SIZE" v={decision.size || '—'} />
         </div>

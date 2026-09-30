@@ -29,7 +29,7 @@ const TITLES = {
   portfolio: ['Portfolio', 'positions the agents trade against'],
   holdings: ['Live portfolio', 'every account · API + statements'],
   scorecard: ['Scorecard', 'Wealthfront trades vs agent ratings'],
-  trade: ['Trade desk', 'order entry · Public.com'],
+  trade: ['Trade desk', 'order entry'],
   research: ['Research hub', 'analyst intelligence'],
   debate: ['Debate room', 'bull vs bear · research manager'],
   deploy: ['Deploy run', 'bundle configuration'],
@@ -112,7 +112,10 @@ export default function App() {
   }
 
   const running = runCtl.run.status === 'running'
-  const [title, sub] = TITLES[screen]
+  const [title, baseSub] = TITLES[screen]
+  // Name the broker actually in use rather than a hard-coded one.
+  const brokerLabel = (boot.brokers || []).find((b) => b.name === boot.active_broker)?.label
+  const sub = screen === 'trade' && brokerLabel ? `${baseSub} · ${brokerLabel}` : baseSub
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: C.bg }}>
@@ -152,10 +155,8 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
       }}
     >
       <div style={{ padding: '18px 18px 16px', borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em', color: C.text }}>
-          PitPal
-        </div>
-        <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.06em', color: C.t6, marginTop: 3 }}>
+        <img src="/pitpal-logo.svg" alt="PitPal" height={24} style={{ display: 'block' }} />
+        <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.06em', color: C.t6, marginTop: 6 }}>
           CONSOLE · v{version}
         </div>
       </div>
@@ -198,7 +199,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
                       height: 5,
                       borderRadius: 9999,
                       flex: 'none',
-                      background: active ? C.green : C.t9,
+                      background: active ? C.blue : C.t9,
                     }}
                   />
                   <span
@@ -216,7 +217,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
                       style={{
                         fontFamily: MONO,
                         fontSize: 9.5,
-                        color: C.green,
+                        color: C.mauve,
                         animation: 'tapulse 1.4s infinite',
                       }}
                     >
@@ -242,7 +243,7 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
       >
         <div style={label9}>ACTIVE PROVIDER</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: 9999, background: C.green, flex: 'none' }} />
+          <span style={{ width: 6, height: 6, borderRadius: 9999, background: C.blue, flex: 'none' }} />
           <span style={{ fontFamily: MONO, fontSize: 11, color: C.t2 }}>{defaults.llm_provider}</span>
         </div>
         <div
@@ -300,7 +301,7 @@ function Header({ title, sub, ticker, tradeDate, onNewRun }) {
           <span style={{ fontFamily: MONO, fontSize: 11, color: C.t2 }}>{tradeDate}</span>
         </div>
         <button
-          className="btn-green"
+          className="btn-primary"
           onClick={onNewRun}
           style={{
             padding: '8px 15px',
@@ -308,8 +309,8 @@ function Header({ title, sub, ticker, tradeDate, onNewRun }) {
             fontSize: 12.5,
             fontWeight: 600,
             cursor: 'pointer',
-            background: C.green,
-            color: C.greenFg,
+            background: C.blue,
+            color: C.onFill,
           }}
         >
           New run

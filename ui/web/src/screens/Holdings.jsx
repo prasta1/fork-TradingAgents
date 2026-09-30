@@ -194,7 +194,7 @@ function AccountChip({ active, onClick, label, value, sub, warn }) {
       onClick={onClick}
       style={{
         textAlign: 'left',
-        border: `1px solid ${active ? C.green : C.border2}`,
+        border: `1px solid ${active ? C.blue : C.border2}`,
         background: active ? C.panelHi : C.panel,
         borderRadius: 8,
         padding: '9px 14px',

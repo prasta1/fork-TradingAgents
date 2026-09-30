@@ -1,256 +1,243 @@
 ---
 name: PitPal Console
-description: Night-desk console for a local multi-agent trading framework and the owner's live brokerage accounts.
+description: Forecast & Observation console for a local multi-agent trading framework and the owner's live brokerage accounts, in Catppuccin Mocha.
 colors:
-  harbor-night: "#051424"
-  sidebar-abyss: "#010f1f"
-  panel-navy: "#0d1c2d"
-  panel-raised: "#122131"
-  panel-deep: "#081726"
-  hairline: "#14243a"
-  divider: "#1c2b3c"
-  input-stroke: "#2f4157"
-  frost-text: "#d4e4fa"
-  mist-text: "#b0c3da"
-  slate-text: "#93a4bb"
-  dusk-text: "#7d90a8"
-  fog-text: "#6d819a"
-  dim-label: "#5c728c"
-  signal-mint: "#4edea3"
-  signal-mint-hover: "#6ffbbe"
-  mint-ink: "#003824"
-  mint-well: "#00311f"
-  mint-panel: "#0e2320"
-  mint-stroke: "#2f5a4a"
-  pale-coral: "#ffb3ad"
-  coral-ink: "#3a0f0c"
-  coral-well: "#390003"
-  coral-panel: "#1e1315"
-  coral-stroke: "#3a2124"
-  ledger-amber: "#e8c07a"
-  amber-dim: "#a8813f"
-  quiet-link: "#bec6e0"
-  selection-stroke: "#4a6b86"
-  selection-fill: "#16283b"
+  crust: "#11111b"
+  mantle: "#181825"
+  base: "#1e1e2e"
+  surface0: "#313244"
+  surface1: "#45475a"
+  surface2: "#585b70"
+  overlay0: "#6c7086"
+  overlay1: "#7f849c"
+  overlay2: "#9399b2"
+  subtext0: "#a6adc8"
+  subtext1: "#bac2de"
+  text: "#cdd6f4"
+  mauve: "#cba6f7"
+  mauve-wash: "#2b2540"
+  blue: "#89b4fa"
+  lavender: "#b4befe"
+  green: "#a6e3a1"
+  green-wash: "#2a3a31"
+  red: "#f38ba8"
+  red-wash: "#29202c"
+  red-stroke: "#5a3445"
+  yellow: "#f9e2af"
+  peach: "#fab387"
 typography:
-  display:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: "34px"
-    fontWeight: 700
-    lineHeight: 1
-    letterSpacing: "-0.02em"
-  display-figure:
-    fontFamily: "JetBrains Mono, ui-monospace, monospace"
-    fontSize: "42px"
-    fontWeight: 700
-    lineHeight: 1
   title:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: "14px"
-    fontWeight: 600
+    fontFamily: "ui-sans-serif, -apple-system, SF Pro Text, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 650
+  heading:
+    fontFamily: "ui-sans-serif, -apple-system, SF Pro Text, system-ui, sans-serif"
+    fontSize: "13px"
+    fontWeight: 650
   body:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, -apple-system, SF Pro Text, system-ui, sans-serif"
     fontSize: "12.5px"
     fontWeight: 400
     lineHeight: 1.55
-  prose:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
-    fontSize: "13.5px"
-    fontWeight: 400
-    lineHeight: 1.68
   data:
-    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontFamily: "ui-monospace, SF Mono, Menlo, monospace"
     fontSize: "12.5px"
     fontWeight: 400
+    fontFeature: "tnum"
+  figure:
+    fontFamily: "ui-monospace, SF Mono, Menlo, monospace"
+    fontSize: "15px"
+    fontWeight: 600
+  stamp:
+    fontFamily: "ui-monospace, SF Mono, Menlo, monospace"
+    fontSize: "11.5px"
+    fontWeight: 400
   label:
-    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, -apple-system, SF Pro Text, system-ui, sans-serif"
     fontSize: "9px"
     fontWeight: 700
     letterSpacing: "0.09em"
 rounded:
-  xs: "3px"
   sm: "4px"
-  md: "6px"
+  md: "5px"
   lg: "8px"
   pill: "9999px"
 spacing:
-  row: "9px"
-  field: "12px"
-  stack: "15px"
-  panel: "18px"
-  section: "20px"
-  page: "24px 26px"
+  row: "7px"
+  stack: "13px"
+  panel: "16px"
+  column: "18px"
+  page: "22px 24px"
 components:
   button-primary:
-    backgroundColor: "{colors.signal-mint}"
-    textColor: "{colors.mint-ink}"
+    backgroundColor: "{colors.blue}"
+    textColor: "{colors.crust}"
     rounded: "{rounded.sm}"
     padding: "9px 16px"
-  button-primary-hover:
-    backgroundColor: "{colors.signal-mint-hover}"
+  button-buy:
+    backgroundColor: "{colors.green}"
+    textColor: "{colors.crust}"
+    rounded: "{rounded.sm}"
+    padding: "11px 16px"
+  button-sell:
+    backgroundColor: "{colors.red}"
+    textColor: "{colors.crust}"
+    rounded: "{rounded.sm}"
+    padding: "11px 16px"
   button-ghost:
-    textColor: "{colors.quiet-link}"
+    textColor: "{colors.text}"
     rounded: "{rounded.sm}"
     padding: "8px 14px"
-  button-ghost-hover:
-    backgroundColor: "{colors.panel-raised}"
-  button-danger:
-    textColor: "{colors.pale-coral}"
+  button-forecast:
+    textColor: "{colors.mauve}"
     rounded: "{rounded.sm}"
     padding: "8px 14px"
-  panel:
-    backgroundColor: "{colors.panel-navy}"
-    rounded: "{rounded.lg}"
-    padding: "18px"
+  segment-selected:
+    backgroundColor: "{colors.blue}"
+    textColor: "{colors.crust}"
+    rounded: "{rounded.md}"
+    height: "32px"
   input:
-    backgroundColor: "{colors.sidebar-abyss}"
-    textColor: "{colors.frost-text}"
+    backgroundColor: "{colors.crust}"
+    textColor: "{colors.text}"
     typography: "{typography.data}"
     rounded: "{rounded.sm}"
     padding: "9px 11px"
-  chip:
-    backgroundColor: "{colors.panel-raised}"
-    rounded: "{rounded.sm}"
-    padding: "6px 11px"
-  nav-item:
-    textColor: "{colors.dusk-text}"
+  observation-panel:
+    backgroundColor: "{colors.base}"
+    rounded: "{rounded.lg}"
+    padding: "16px"
+  forecast-panel:
+    backgroundColor: "{colors.base}"
+    textColor: "{colors.mauve}"
+    rounded: "{rounded.lg}"
+    padding: "16px"
+  nav-item-active:
+    backgroundColor: "{colors.surface0}"
+    textColor: "{colors.text}"
     rounded: "{rounded.sm}"
     padding: "8px 10px"
-  nav-item-active:
-    backgroundColor: "{colors.panel-raised}"
-    textColor: "{colors.frost-text}"
 ---
-
-<!-- REFERENCE SNAPSHOT (2026-09-30): the pre-redesign baseline, recorded before direction A ("Two materials") is explored. Use it to understand and match the incumbent console; do not extend it as the target world. Replace this file when a redesign commits a new world. -->
 
 # Design System: PitPal Console
 
 ## Overview
 
-**Creative North Star: "The Night Desk"**
+**Creative North Star: "Forecast & Observation"**
 
-A trader's desk after hours. Deep harbor navy fills the room, one mint signal light marks whatever is live, active or up, and everything else stays quiet. The console is calm and restrained: flat panels separated by hairlines, small type, and numbers set in a monospace so they read like instruments rather than prose.
+Agents issue forecasts; brokers report observations. Every surface keeps the two apart the way a weather service keeps a forecast discussion apart from the recorded readings: a forecast is dashed, stamped with when it was issued and how long it is valid, and drawn in one colour that belongs to nothing else; an observation is solid, stamped with when it was observed, and drawn in plain ink. The owner trades real money here, so an agent's opinion must never be mistakable for a fact about an account.
 
-Density beats comfort. Body text sits at 12.5px, labels at 9px uppercase, and rows are padded tightly so a portfolio, a debate and an order ticket can share one screen. Colour is spent almost entirely on meaning: mint for buy, gain and "live"; coral for sell, loss and danger; amber for stale or illustrative data. There is no decoration, no shadow and no gradient; depth comes from stepping the navy lighter.
+The world is Catppuccin Mocha (pinned by the owner): a soft, low-glare dark palette built for long sessions at a desk. The console stays dense and quiet. Colour is spent on meaning, and each accent owns exactly one meaning.
 
-The system's known weakness is the same quietness taken too far: most of the text ramp is too faint to read comfortably (see Do's and Don'ts), and the single mint accent carries so many meanings that "the agent recommends" and "your account is up" look identical.
+Forecast logic is still being defined. Until it is, forecast surfaces show only what a run produced (rating, target, stop, horizon, size) and label themselves "work in progress"; no confidence band, probability or skill score is drawn.
 
 **Key Characteristics:**
-- Dark, cool navy surfaces stepped by lightness, never by shadow
-- One accent (signal mint) carrying buy, gain, primary action and live state
-- IBM Plex Sans for interface, JetBrains Mono for every number, id and timestamp
-- 1px hairline borders on every container
-- Tiny uppercase bold labels as the section and field headers
-- Compact, desk-first layout: fixed sidebar, fixed-width right rails
+- Catppuccin Mocha surfaces: Mantle page, Base panels, Crust wells
+- Mauve and dashed strokes mean "agent forecast", and nothing else
+- Solid ink and solid borders mean "observed by the market or broker"
+- Green and red mean money and order side only
+- Blue means selected, focused, or a primary action that isn't money
+- System faces (SF Pro, SF Mono); no web-font download
 
 ## Colors
 
-A near-monochrome cool navy world with one mint signal, one coral counter-signal and a muted amber caution.
+Catppuccin Mocha, used by role rather than by mood.
 
 ### Primary
-- **Signal Mint**: the only accent. Primary buttons, the active nav dot, "live" badges, Buy/Overweight ratings, positive P/L and the bid price. Pairs with **Mint Ink** for text on mint, **Mint Well** for chip backgrounds and **Mint Panel** / **Mint Stroke** for the agent-proposal card.
+- **Mauve**: agent forecasts and agent work only. The forecast panel's dashed frame, headline and issued stamp; target and stop wherever they appear; every agent rating on every screen (`ratingStyle`); Live run's node progress and the "live" badge; the "Ref only" note on the ticket. **Mauve Wash** fills the forecast window on a chart.
 
 ### Secondary
-- **Pale Coral**: sell, loss, stop price, danger buttons and error notices. Deliberately soft rather than alarm-red so losses read without shouting. Pairs with **Coral Ink** (text on coral), **Coral Well**, **Coral Panel** and **Coral Stroke**.
+- **Blue**: interaction and status. Selected segments, option cards and toggles (Deploy run's analysts, providers, rounds), the active account chip, the focus ring, primary buttons that don't commit money ("New run", "Initialize agent run"), links, connection dots and the active-nav dot. **Lavender** is link hover.
 
 ### Tertiary
-- **Ledger Amber**: caution and provenance, meaning stale "as of" prices, the MOCKUP badge and the live-order confirmation border (**Amber Dim**).
+- **Green**: gain and Buy. The Buy segment and "Confirm buy" button, positive change figures.
+- **Red**: loss and Sell. The Sell segment and "Confirm sell" button, negative figures, errors and the live-money warning line (**Red Wash**, **Red Stroke** for error boxes).
+- **Yellow** (with **Peach**): reserved for agent-acted advisories, when automation exists; today it marks stale or unavailable observations.
 
 ### Neutral
-- **Harbor Night**: the page background.
-- **Sidebar Abyss**: the sidebar and every input well; the darkest surface.
-- **Panel Navy**: cards and panels. **Panel Raised** marks hover, active nav and chips; **Panel Deep** sits under nested content.
-- **Hairline**, **Divider**, **Input Stroke**: the three border weights, from structural to interactive.
-- **Frost Text** down through **Mist**, **Slate**, **Dusk** and **Fog Text**: the readable text ramp. **Dim Label** is the lightest colour still used for labels; darker ramp steps (#4a607c, #3d5470, #2f4157, #243549) exist in code for hints, timestamps and dots.
-- **Quiet Link**: ghost buttons, links and the Hold rating.
-- **Selection Stroke** / **Selection Fill**: selected option cards on Deploy.
+- **Crust**: input wells, the sidebar, and text on any filled accent.
+- **Mantle**: the page.
+- **Base**: panels.
+- **Surface0 / Surface1**: hairlines, hover, selected nav row.
+- **Overlay0**: control borders (3.4:1 on Base, enough for a control edge).
+- **Text, Subtext1, Subtext0, Overlay2, Overlay1**: the text ramp, all at or above 4.4:1 on Base. **Surface2** is for dots and rules only, never text.
 
 ### Named Rules
-**The One Signal Rule.** Mint is the only colour that means "go". Nothing decorative is ever mint.
+**The One Meaning Rule.** Each accent owns one meaning: mauve forecast, blue interaction, green/red money, yellow agent-acted. An accent never appears on something outside its meaning.
 
-**The Stepped Navy Rule.** Surfaces differ by lightness within one navy hue. A new surface picks an existing step; it never introduces a new hue.
+**The No Money Ink On Opinions Rule.** An agent's rating, target or stop is drawn in mauve even when it says "Buy" or sits below the price. Green and red wait until money is involved.
 
 ## Typography
 
-**Body Font:** IBM Plex Sans (with system-ui, -apple-system, sans-serif)
-**Label/Mono Font:** JetBrains Mono (with ui-monospace, SFMono-Regular, monospace)
+**Body Font:** SF Pro via `ui-sans-serif` (with -apple-system, system-ui)
+**Data Font:** SF Mono via `ui-monospace` (with Menlo)
 
-**Character:** Plex is a neutral, engineered sans that stays legible at small sizes; JetBrains Mono gives every figure a fixed width so columns of prices and percentages align. About half the text on a screen is mono.
+**Character:** The platform's own faces, chosen because the console runs on one Mac and must not depend on a network font. Tabular numerals are on globally so prices align in columns.
 
 ### Hierarchy
-- **Display** (700, 34px, line-height 1, -0.02em): the ticker in Research and the rating word in the proposal card (30–34px).
-- **Display Figure** (mono 700, 42px): the net-worth total on the dashboard.
-- **Title** (600, 14px): panel headers.
-- **Prose** (400, 13.5px, line-height 1.68, max 720px): agent reports rendered from markdown.
-- **Body** (400, 12.5px, line-height 1.55): interface copy, table cells, notes.
-- **Data** (mono 400, 11.5–13px): prices, quantities, ids, timestamps, inputs.
-- **Label** (700, 9–9.5px, 0.07–0.09em tracking, uppercase): section headers, field labels, stat captions.
+- **Title** (650, 15px): forecast headline.
+- **Heading** (650, 13–14px): panel and ticket headings.
+- **Body** (400, 12.5px, 1.55): interface copy and notes.
+- **Figure** (mono 600, 15px): bid, ask, last.
+- **Data** (mono 400, 12.5px): prices, quantities, ids, inputs.
+- **Stamp** (mono 400, 11.5px): "Issued HH:MM by run_…", "Observed HH:MM", chart annotations.
+- **Label** (700, 9–9.5px, 0.07–0.09em, uppercase): legacy section labels on screens not yet redrawn.
 
 ### Named Rules
-**The Mono Figures Rule.** Every number a user compares (price, quantity, percentage, date, id) is set in JetBrains Mono. Words are Plex.
+**The Stamp Rule.** Every forecast carries an issued time and validity; every observation carries an observed time. A number without a stamp is a number whose age the owner has to guess.
 
 ## Layout
 
-A desktop-first shell: a fixed **214px sidebar** (brand, grouped navigation, active model), a **54px header** (screen title with a mono subtitle, ticker and date pills, "New run"), and a scrolling content area padded 24px top and 26px sides. Screens compose as a flexible main column plus a **fixed right rail of 300–352px** (order entry, watchlist, decision card). Inside panels, content uses flex rows with 12–20px gaps and CSS grids of 4–6 equal columns for stat rows.
-
-Spacing clusters around 9px (row padding), 12px (field gaps), 15px (form stacks), 18px (panel padding) and 20px (column gaps). There are no responsive breakpoints; the layout assumes a laptop-or-wider window and does not adapt to phones.
+Fixed 214px sidebar, 54px header, content padded 22px × 24px. The Trade desk is two flexible columns: the chart column (grows, min ~540px) and the ticket (380px) docked at the chart's "now" edge. Below a 1200px viewport the ticket takes the full row under the chart. Charts are responsive SVG at a 760 × 320 viewBox; the forecast window's width is scaled to the run's horizon (30 observed sessions ≈ 42 days; clamped to 50–80% of the plot).
 
 ## Elevation & Depth
 
-Flat. There are no shadows anywhere. Depth is tonal: Sidebar Abyss sits below Harbor Night, which sits below Panel Navy, which sits below Panel Raised, and every container also carries a 1px border. Interaction lifts an element one step (hover and active nav move to Panel Raised) rather than adding elevation.
+Flat. No shadows. Depth is Catppuccin's own layering: Crust wells sit in Base panels on a Mantle page. Register, not height, separates things: a dashed mauve frame is a forecast, a solid Overlay0 frame is an observation or a control.
 
 ### Named Rules
-**The No-Shadow Rule.** Depth is a lighter navy and a hairline, never a drop shadow or glow.
+**The Dashed-Is-Forecast Rule.** Dashed or dotted strokes are reserved for agent forecasts. Observed data and controls are always solid.
 
 ## Shapes
 
-Small, consistent, slightly softened corners: 4px for buttons, inputs, pills and nav items; 8px for panels and cards; 3px for inline chips and code; 5–6px for selectable option cards; full pills only for status dots and toggles. Borders are always 1px solid. Nothing is clipped into non-rectangular shapes.
+4px corners on buttons and inputs, 5px on segmented groups, 8px on panels, full pills for status dots. Borders are 1px.
 
 ## Components
 
 ### Buttons
-Calm and restrained: flat, no border on the primary, weight 600.
-- **Shape:** gently rounded (4px).
-- **Primary:** Signal Mint fill with Mint Ink text, 9px × 16px, 12.5px. Hover brightens to Signal Mint Hover.
-- **Ghost:** 1px Input Stroke outline, Quiet Link text, 8px × 14px, weight 500. Hover fills Panel Raised.
-- **Danger:** 1px Coral Stroke outline with Pale Coral text; used for cancelling runs and orders.
-- **Disabled:** Divider fill with Dim Label text and a not-allowed cursor.
+- **Primary:** Blue fill, Crust text, 4px, 9 × 16px, 600. Hover lightens to #a8c7fb.
+- **Buy / Sell commit:** Green or Red fill, Crust text; used only for confirming an order.
+- **Ghost:** 1px Overlay0 outline, Text label; "Review order" and "Edit". Dims to 45% when disabled.
+- **Forecast:** 1px dashed Mauve outline, Mauve label; "Load into ticket", which fills symbol and side only.
+- **Danger:** Red outline, Red label; cancelling runs and orders.
 
-### Chips
-- **Style:** Panel Raised fill, 1px Divider border, 4px radius, a 9.5px bold uppercase key followed by a 12px mono value.
-- **Rating chips:** the rating colour on its well (Mint on Mint Well, Coral on Coral Well, Quiet Link on Divider for Hold).
-
-### Cards / Containers
-- **Corner Style:** 8px.
-- **Background:** Panel Navy; the agent proposal uses Mint Panel with Mint Stroke.
-- **Shadow Strategy:** none (see Elevation & Depth).
-- **Border:** 1px Divider; the header row is separated by another 1px Divider.
-- **Internal Padding:** 18px; header 14px × 18px with a 14px/600 title and an optional mono meta line.
+### Segmented control
+A 1px Overlay0 group, 32px tall (38px for Buy/Sell), one pressed segment. Pressed is Blue with Crust text; the Buy/Sell group fills Green or Red instead. Buttons carry `aria-pressed`.
 
 ### Inputs / Fields
-- **Style:** Sidebar Abyss well, 1px Input Stroke, 4px radius, 9px × 11px, 13px mono text.
-- **Label:** a 9.5px bold uppercase label 7px above the input; optional 10.5px hint below.
-- **Focus:** none; the browser outline is removed and nothing replaces it (a known gap).
+Crust well, 1px Overlay0, 4px, SF Mono 13px. Focus shows the global 2px Blue ring. An invalid price turns the border Red and shows an inline alert.
+
+### Forecast panel (signature)
+Dashed Mauve frame on Base. Headline "{TICKER} forecast · {rating} · target · stop" in Mauve, stamp line below, then the price chart: solid observed closes to a vertical "now" rule, a Mauve Wash window to its right holding the target (dashed) and stop (dotted) as Mauve reference lines, "valid to {date}" at its edge, and "forecast view · work in progress" until forecast logic lands.
+
+### Observation panel
+Solid Overlay0 frame on Base: the ticket, top of book ("Observed HH:MM"), the observed-only chart, and the submitted order "reported by {broker}".
 
 ### Navigation
-- **Style:** grouped under 9px uppercase group labels (Portfolio, Research, Agents, Build). Each item is a 12.5px row with a 5px status dot.
-- **Default:** Dusk Text, weight 500, dot in the darkest ramp step.
-- **Hover:** Panel Navy fill.
-- **Active:** Panel Raised fill, Frost Text at weight 600, dot turns Signal Mint. A running analysis adds a pulsing mono "live" badge.
-
-### Pipeline Node (signature)
-The Live run graph: one column per stage of the agent pipeline, each node a small bordered button whose status dot and elapsed timer move from waiting (dark) to running (pulsing mint) to done. Selecting a node stops auto-follow and shows its report in the prose style.
+Grouped sidebar rows with a 5px dot. Active row: Surface0 fill, Text, Blue dot. A running analysis shows a pulsing Mauve "live" badge.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** set every comparable number in JetBrains Mono.
-- **Do** keep Signal Mint for meaning (buy, gain, live, primary action) and nothing else.
-- **Do** separate containers with 1px borders and a lighter navy step, never a shadow.
-- **Do** mark stale or illustrative data in Ledger Amber, as the "as of" prices and the MOCKUP badge already do.
+- **Do** draw anything an agent produced in Mauve with a dashed or dotted stroke, stamped with its issued time.
+- **Do** draw anything the market or broker reported solid, stamped "Observed HH:MM".
+- **Do** use Blue for selection, focus and non-money primary actions.
+- **Do** put Crust text on every filled accent.
+- **Do** say "unavailable" when an observation fails; never show it as empty.
 
 ### Don't:
-- **Don't** set readable text darker than Fog Text (#6d819a). Measured against the panels, Dim Label is about 3.5:1 and the darker steps fall to 1.5–2.9:1, all below the 4.5:1 needed for body text.
-- **Don't** remove input focus outlines without a replacement; the current `outline: none` leaves keyboard users with no focus indicator.
-- **Don't** add new font sizes; about 20 already exist between 9px and 42px.
-- **Don't** add new corner radii beyond 3, 4, 6 and 8px and the pill.
+- **Don't** colour an agent rating, target or stop green or red.
+- **Don't** extend forecast lines back over observed prices; they start at "now".
+- **Don't** draw confidence bands, probabilities or skill scores until the forecast logic is defined.
+- **Don't** use green on a control that doesn't commit a buy.
+- **Don't** use Surface2 or darker for text.
+- **Don't** add a light theme or paper textures.
