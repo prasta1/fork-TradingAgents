@@ -68,7 +68,8 @@ export default function TradeDesk({ run, ticker, boot }) {
   useEffect(() => {
     if (limitPrice) return
     if (decision.price_target && run?.request?.ticker === symbol) return
-    if (quote?.last) setLimitPrice(String(quote.last))
+    // Quotes can carry sub-cent precision (e.g. 185.1252); brokers only take cents.
+    if (quote?.last) setLimitPrice(Number(quote.last).toFixed(2))
     // Only seeds an empty field.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote])
