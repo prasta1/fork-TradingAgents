@@ -652,7 +652,7 @@ function PriceChart({ closes, decision, issued }) {
     return <ChartNote>Loading observed prices…</ChartNote>
   }
 
-  const observedAt = `Observed ${hhmm(new Date())}`
+  const observedAt = hhmm(new Date())
   const refs = forecast ? [decision.price_target, decision.stop].filter((v) => Number(v) > 0).map(Number) : []
   const values = [...closes, ...refs]
   let lo = Math.min(...values)
