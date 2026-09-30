@@ -249,7 +249,8 @@ class Run:
 class RunManager:
     """Owns the active run and a bounded history of finished ones."""
 
-    HISTORY_LIMIT = 20
+    # Room for a whole portfolio batch, so every ticker's run stays openable.
+    HISTORY_LIMIT = 60
 
     def __init__(self):
         self._runs: dict[str, Run] = {}
@@ -291,7 +292,8 @@ class RunManager:
 
     # -- execution --------------------------------------------------------
 
-    def _build_config(self, request: dict) -> dict:
+    @staticmethod
+    def _build_config(request: dict) -> dict:
         cfg = DEFAULT_CONFIG.copy()
         for key in (
             "llm_provider",

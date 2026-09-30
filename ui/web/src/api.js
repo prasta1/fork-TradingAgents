@@ -44,6 +44,10 @@ export const api = {
   getRun: (id) => get(`/runs/${id}`),
   cancelRun: (id) => post(`/runs/${id}/cancel`),
 
+  startBatch: (positions, settings) => post('/batches', { positions, settings }),
+  latestBatch: () => get('/batches/latest'),
+  cancelBatch: () => post('/batches/latest/cancel'),
+
   history: () => get('/history'),
 
   wealthfrontScorecard: () => get('/wealthfront/scorecard'),

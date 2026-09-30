@@ -3,6 +3,7 @@ import { api } from './api.js'
 import { C, MONO, label9 } from './theme.js'
 import { useRun } from './useRun.js'
 
+import BatchRun from './screens/BatchRun.jsx'
 import DebateRoom from './screens/DebateRoom.jsx'
 import DeployRun from './screens/DeployRun.jsx'
 import Holdings from './screens/Holdings.jsx'
@@ -20,7 +21,7 @@ const NAV = [
   { title: 'RESEARCH', items: [['research', 'Research hub'], ['debate', 'Debate room']] },
   {
     title: 'AGENTS',
-    items: [['deploy', 'Deploy run'], ['run', 'Live run'], ['history', 'Run history']],
+    items: [['deploy', 'Deploy run'], ['batch', 'Batch run'], ['run', 'Live run'], ['history', 'Run history']],
   },
   { title: 'BUILD', items: [['strategy', 'Strategy'], ['settings', 'Settings']] },
 ]
@@ -33,6 +34,7 @@ const TITLES = {
   research: ['Research hub', 'analyst intelligence'],
   debate: ['Debate room', 'bull vs bear · research manager'],
   deploy: ['Deploy run', 'bundle configuration'],
+  batch: ['Batch run', 'every holding · one after another'],
   run: ['Live run', 'LangGraph execution'],
   history: ['Run history', 'decision log + reflections'],
   strategy: ['Strategy', 'logic + backtest'],
@@ -105,6 +107,7 @@ export default function App() {
     research: <ResearchHub {...shared} />,
     debate: <DebateRoom {...shared} />,
     deploy: <DeployRun {...shared} />,
+    batch: <BatchRun {...shared} />,
     run: <LiveRun {...shared} />,
     history: <RunHistory {...shared} />,
     strategy: <Strategy {...shared} />,

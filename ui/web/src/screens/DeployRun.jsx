@@ -26,7 +26,7 @@ function resolveBenchmark(ticker) {
   return suffix ? BENCHMARKS[suffix] : 'SPY'
 }
 
-function detectAssetType(ticker) {
+export function detectAssetType(ticker) {
   const upper = (ticker || '').toUpperCase()
   return CRYPTO_SUFFIXES.some((s) => upper.endsWith(s)) ? 'crypto' : 'stock'
 }
@@ -34,7 +34,7 @@ function detectAssetType(ticker) {
 const LAST_LAUNCH_KEY = 'deploy.lastLaunch'
 
 /** LLM settings from the last successful launch, or {} if none/unreadable. */
-function lastLaunch() {
+export function lastLaunch() {
   try {
     return JSON.parse(localStorage.getItem(LAST_LAUNCH_KEY)) || {}
   } catch {

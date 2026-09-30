@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from tradingagents.command_center.portfolio_store import PortfolioStore
 
-from . import history, holdings, market, models, portfolio, runs, settings_info, wealthfront
+from . import batch, history, holdings, market, models, portfolio, runs, settings_info, wealthfront
 from .brokers import BrokerError, BrokerRegistry
 
 load_dotenv()
@@ -32,6 +32,7 @@ load_dotenv()
 app = FastAPI(title="TradingAgents Console", version="0.3.1")
 
 manager = runs.RunManager()
+batches = batch.BatchManager(manager)
 brokers = BrokerRegistry()
 store = PortfolioStore()
 
@@ -41,8 +42,9 @@ WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 # -- request models -------------------------------------------------------
 
 
-class RunRequest(BaseModel):
-    ticker: str
+class RunSettings(BaseModel):
+    """Everything a run is configured with except which ticker it analyses."""
+
     trade_date: str = Field(default_factory=runs.default_trade_date)
     asset_type: str = "stock"
     analysts: list[str] = ["market", "social", "news", "fundamentals"]
@@ -53,6 +55,21 @@ class RunRequest(BaseModel):
     max_debate_rounds: int = 1
     max_risk_discuss_rounds: int = 1
     checkpoint_enabled: bool = False
+
+
+class RunRequest(RunSettings):
+    ticker: str
+
+
+class BatchPosition(BaseModel):
+    sym: str
+    weight: float = 0
+    asset_type: str = "stock"
+
+
+class BatchRequest(BaseModel):
+    positions: list[BatchPosition]
+    settings: RunSettings
 
 
 class OrderRequest(BaseModel):
@@ -186,6 +203,10 @@ def etrade_disconnect():
 
 @app.post("/api/runs")
 def start_run(request: RunRequest):
+    # Between two of a batch's tickers no run is active, so the run manager
+    # alone would let this slip in and take the batch's slot.
+    if batches.running:
+        raise HTTPException(status_code=409, detail="a portfolio batch is in progress")
     try:
         run = manager.start(request.model_dump())
     except RuntimeError as exc:
@@ -253,6 +274,38 @@ async def stream_run(run_id: str):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# -- batches --------------------------------------------------------------
+
+
+@app.post("/api/batches")
+def start_batch(request: BatchRequest):
+    try:
+        started = batches.start(
+            [p.model_dump() for p in request.positions], request.settings.model_dump()
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return started.snapshot()
+
+
+@app.get("/api/batches/latest")
+def latest_batch():
+    """The running batch, else the last one to finish; null if none this session."""
+    latest = batches.latest
+    return latest.snapshot() if latest else None
+
+
+@app.post("/api/batches/latest/cancel")
+def cancel_batch():
+    latest = batches.latest
+    if not latest or latest.status != "running":
+        raise HTTPException(status_code=404, detail="no batch in progress")
+    latest.cancel()
+    return {"status": "cancelling"}
 
 
 # -- history --------------------------------------------------------------
