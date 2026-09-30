@@ -31,6 +31,8 @@ from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.graph.checkpointer import clear_checkpoint, get_checkpointer, thread_id
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 
+from . import alerts
+
 # Analyst wire key -> (node label, state key holding its report).
 ANALYST_NODES = {
     "market": ("Market Analyst", "market_report"),
@@ -249,7 +251,8 @@ class Run:
 class RunManager:
     """Owns the active run and a bounded history of finished ones."""
 
-    HISTORY_LIMIT = 20
+    # Room for a whole portfolio batch, so every ticker's run stays openable.
+    HISTORY_LIMIT = 60
 
     def __init__(self):
         self._runs: dict[str, Run] = {}
@@ -286,12 +289,14 @@ class RunManager:
                 self._runs.pop(self._order.pop(0), None)
             self._active = run
 
+        alerts.watcher.watch(self._build_config(request).get("backend_url"))
         threading.Thread(target=self._execute, args=(run,), daemon=True).start()
         return run
 
     # -- execution --------------------------------------------------------
 
-    def _build_config(self, request: dict) -> dict:
+    @staticmethod
+    def _build_config(request: dict) -> dict:
         cfg = DEFAULT_CONFIG.copy()
         for key in (
             "llm_provider",
@@ -390,7 +395,7 @@ class RunManager:
 
         except Exception as exc:
             run.status = "error"
-            run.error = f"{type(exc).__name__}: {exc}"
+            run.error = alerts.describe_run_error(exc, cfg)
             run.log(run.error, level="error")
             run.emit("run.error", message=run.error, traceback=traceback.format_exc()[-2000:])
 
@@ -398,9 +403,22 @@ class RunManager:
             run.finished_at = time.time()
             run.stats = stats.get_stats()
             run.emit("run.finished", **run.snapshot())
+            self._alert(run)
             with self._lock:
                 if self._active is run:
                     self._active = None
+
+    @staticmethod
+    def _alert(run: Run) -> None:
+        """Tell the bell how a run ended — a failure most of all, with its reason."""
+        ticker = run.request["ticker"]
+        action = {"run_id": run.id}
+        if run.status == "error":
+            alerts.feed.add("error", "run", f"{ticker} run failed", run.error or "", action)
+        elif run.status == "cancelled":
+            alerts.feed.add("warn", "run", f"{ticker} run cancelled", "", action)
+        elif run.status == "complete":
+            alerts.feed.add("info", "run", f"{ticker} rated {run.signal or 'REVIEW'}", "", action)
 
     def _stream(self, run: Run, compiled, init_state: dict, args: dict, stats) -> None:
         """Consume the graph stream, emitting a console event per node."""

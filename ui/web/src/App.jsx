@@ -3,7 +3,9 @@ import { api } from './api.js'
 import { C, MONO, label9 } from './theme.js'
 import { LoadError } from './components/ui.jsx'
 import { useRun } from './useRun.js'
+import AlertBell from './components/AlertBell.jsx'
 
+import BatchRun from './screens/BatchRun.jsx'
 import DebateRoom from './screens/DebateRoom.jsx'
 import DeployRun from './screens/DeployRun.jsx'
 import Holdings from './screens/Holdings.jsx'
@@ -21,7 +23,7 @@ const NAV = [
   { title: 'RESEARCH', items: [['research', 'Research hub'], ['debate', 'Debate room']] },
   {
     title: 'AGENTS',
-    items: [['deploy', 'Deploy run'], ['run', 'Live run'], ['history', 'Run history']],
+    items: [['deploy', 'Deploy run'], ['batch', 'Batch run'], ['run', 'Live run'], ['history', 'Run history']],
   },
   { title: 'BUILD', items: [['strategy', 'Strategy'], ['settings', 'Settings']] },
 ]
@@ -34,6 +36,7 @@ const TITLES = {
   research: ['Research hub', 'analyst intelligence'],
   debate: ['Debate room', 'bull vs bear · research manager'],
   deploy: ['Deploy run', 'bundle configuration'],
+  batch: ['Batch run', 'every holding · one after another'],
   run: ['Live run', 'LangGraph execution'],
   history: ['Run history', 'decision log + reflections'],
   strategy: ['Strategy', 'logic + backtest'],
@@ -112,6 +115,7 @@ export default function App() {
     research: <ResearchHub {...shared} />,
     debate: <DebateRoom {...shared} />,
     deploy: <DeployRun {...shared} />,
+    batch: <BatchRun {...shared} />,
     run: <LiveRun {...shared} />,
     history: <RunHistory {...shared} />,
     strategy: <Strategy {...shared} />,
@@ -132,6 +136,13 @@ export default function App() {
         running={running}
         defaults={boot.defaults}
         version={boot.version}
+        openRun={(runId) =>
+          runCtl
+            .attach(runId)
+            .then(() => setScreen('run'))
+            // Runs live in server memory; after a restart only the history remains.
+            .catch(() => setScreen('history'))
+        }
       />
 
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -149,7 +160,7 @@ export default function App() {
   )
 }
 
-function Sidebar({ screen, setScreen, running, defaults, version }) {
+function Sidebar({ screen, setScreen, running, defaults, version, openRun }) {
   return (
     <aside
       style={{
@@ -249,7 +260,8 @@ function Sidebar({ screen, setScreen, running, defaults, version }) {
           gap: 9,
         }}
       >
-        <div style={label9}>ACTIVE PROVIDER</div>
+        <AlertBell openRun={openRun} goto={setScreen} />
+        <div style={{ ...label9, marginTop: 6 }}>ACTIVE PROVIDER</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 6, height: 6, borderRadius: 9999, background: C.blue, flex: 'none' }} />
           <span style={{ fontFamily: MONO, fontSize: 11, color: C.t2 }}>{defaults.llm_provider}</span>
