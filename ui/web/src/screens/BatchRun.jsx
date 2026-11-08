@@ -69,7 +69,7 @@ function Picker({ boot, tradeDate, goto, onStarted }) {
   const [error, setError] = useState(null)
   const [selected, setSelected] = useState(new Set())
   const [submitting, setSubmitting] = useState(false)
-  const settings = { ...boot.defaults, ...lastLaunch() }
+  const settings = { ...boot.defaults, ...lastLaunch(boot.defaults) }
 
   useEffect(() => {
     api
