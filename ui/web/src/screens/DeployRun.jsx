@@ -33,10 +33,20 @@ export function detectAssetType(ticker) {
 
 const LAST_LAUNCH_KEY = 'deploy.lastLaunch'
 
-/** LLM settings from the last successful launch, or {} if none/unreadable. */
-export function lastLaunch() {
+/**
+ * LLM settings from the last successful launch, or {} if none/unreadable.
+ *
+ * Saved settings are only honoured while the server's backend URL is the one
+ * they were made against; if .env points somewhere new, the server value wins
+ * (otherwise a stale URL keeps overriding it). Entries saved before this check
+ * have no `server_backend_url`, so they are dropped once.
+ *
+ * @param {{backend_url?: string|null}} serverDefaults - boot.defaults from the server.
+ */
+export function lastLaunch(serverDefaults) {
   try {
-    return JSON.parse(localStorage.getItem(LAST_LAUNCH_KEY)) || {}
+    const saved = JSON.parse(localStorage.getItem(LAST_LAUNCH_KEY)) || {}
+    return saved.server_backend_url === (serverDefaults.backend_url || '') ? saved : {}
   } catch {
     return {}
   }
@@ -46,7 +56,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
   const { defaults: serverDefaults, analysts: analystOptions } = boot
   // This screen unmounts when a run starts, so without this every visit would
   // reset the model choice to the server config.
-  const defaults = { ...serverDefaults, ...lastLaunch() }
+  const defaults = { ...serverDefaults, ...lastLaunch(serverDefaults) }
   const [providers, setProviders] = useState([])
   const [provider, setProvider] = useState(defaults.llm_provider)
   const [deepModel, setDeepModel] = useState(defaults.deep_think_llm)
@@ -161,6 +171,7 @@ export default function DeployRun({ boot, ticker, setTicker, tradeDate, setTrade
           deep_think_llm: deepModel,
           quick_think_llm: quickModel,
           backend_url: backendUrl,
+          server_backend_url: serverDefaults.backend_url || '',
         })
       )
       goto('run')
