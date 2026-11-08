@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fmtMoney, fmtSecs, renderMarkdown } from '../api.js'
 import { Btn, Chip, Empty, L9 } from '../components/ui.jsx'
 import { C, MONO, label9, ratingStyle } from '../theme.js'
@@ -37,6 +37,13 @@ export default function LiveRun({ run, logs, error, cancel, reset, goto, ticker 
   useEffect(() => {
     setPinned(false)
   }, [run.run_id])
+
+  // The report pane stays mounted when the selection changes, so the browser
+  // keeps its scroll offset; start each node's report from the top.
+  const reportRef = useRef(null)
+  useEffect(() => {
+    reportRef.current?.scrollTo(0, 0)
+  }, [selected])
 
   // Local clock so ELAPSED advances between server events. Derived from the
   // run's start timestamp rather than accumulated, so a reload mid-run shows
@@ -177,7 +184,10 @@ export default function LiveRun({ run, logs, error, cancel, reset, goto, ticker 
 
       {/* report + side rail */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <section style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '22px 26px 40px' }}>
+        <section
+          ref={reportRef}
+          style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '22px 26px 40px' }}
+        >
           <ReportPane run={run} node={selected} error={error} />
         </section>
 
