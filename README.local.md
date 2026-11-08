@@ -8,7 +8,7 @@ Multi-agent LLM financial trading framework running entirely on local hardware �
 ┌─────────────────┐    HTTPS (9292) ───┐         ┌──────────┐
 │  Mac Studio     │                   │         │  MBP     │
 │  llama-swap     │◄── tailnet ───────┼────────►│  Console │
-│  studio-* models│                   │  http   │  :8551   │
+│  ms-* models    │                   │  http   │  :8551   │
 └─────────────────┘                   │         └──────────┘
                                       │
 ┌─────────────────┐    HTTP (8999)     │
@@ -19,17 +19,18 @@ Multi-agent LLM financial trading framework running entirely on local hardware �
 
 - **Studio** runs `llama-swap` on port 9292 (HTTPS via `studio.taile85139.ts.net`)
 - **MBP** (this machine) runs the web console, which proxies LLM calls to the Studio over Tailscale
-- The configured model (`studio-qwen3-6-27b`) is in the Studio's `primary` group — it stays loaded rather than swapping out
-- Model ids are host-prefixed (`studio-*` / `macbook-*`) so a frontend listing both backends can't collide on a shared name
+- The configured model is `ms-qwen3.6-35b-a3b`
+- Studio model ids are prefixed `ms-` (the Studio's llama-swap serves them from its `/v1/models`)
 
 ## Quick Start
 
-### 1. Activate the environment
+### 1. Go to the repo
 
 ```bash
-source /Users/prasta/Projects/Trading/TradingAgents/.venv/bin/activate
-cd /Users/prasta/Projects/Trading/TradingAgents
+cd /Users/prasta/Projects/forks/fork-tradingagents
 ```
+
+No activation needed — the commands below call the venv's Python directly.
 
 ### 2. Build the console (first time, or after front-end changes)
 
@@ -40,13 +41,16 @@ cd ui/web && npm install && npm run build && cd ../..
 ### 3. Start the console
 
 ```bash
-.venv/bin/uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
+.venv/bin/python -m uvicorn ui.server.app:app --host 0.0.0.0 --port 8551
 ```
 
-Call `uvicorn` by its venv path rather than bare. Homebrew also ships one at
-`/opt/homebrew/bin/uvicorn` on a different Python, and if that wins on `$PATH`
-you get `ModuleNotFoundError: No module named 'dotenv'` — it has uvicorn but
-none of this project's dependencies.
+Use `.venv/bin/python -m uvicorn`, not `.venv/bin/uvicorn` or a bare `uvicorn`:
+
+- The venv was created at the old `Projects/Trading/TradingAgents` path, so the
+  shebang in `.venv/bin/uvicorn` (and every other script there) points at a folder
+  that no longer exists and fails with "No such file or directory".
+- A bare `uvicorn` may resolve to Homebrew's `/opt/homebrew/bin/uvicorn` on a
+  different Python, giving `ModuleNotFoundError: No module named 'dotenv'`.
 
 If it fails with **address already in use**, something is already on 8551:
 
@@ -181,16 +185,21 @@ The `.env` file controls which LLM the agents use:
 
 ```bash
 TRADINGAGENTS_LLM_PROVIDER=openai_compatible
-TRADINGAGENTS_DEEP_THINK_LLM=studio-qwen3-6-27b
-TRADINGAGENTS_QUICK_THINK_LLM=studio-qwen3-6-27b
+TRADINGAGENTS_DEEP_THINK_LLM=ms-qwen3.6-35b-a3b
+TRADINGAGENTS_QUICK_THINK_LLM=ms-qwen3.6-35b-a3b
 TRADINGAGENTS_LLM_BACKEND_URL=https://studio.taile85139.ts.net:9292/v1
 TRADINGAGENTS_TEMPERATURE=0.2
 ```
 
-To use a different model, update the deep/quick model names. Ids are host-prefixed — pick one that matches the backend URL above.
+To use a different model, update the deep/quick model names. List what the backend serves right now with:
 
-- **Studio** (`:9292`): `studio-qwen3-6-27b`, `studio-qwen3-coder-next`, `studio-devstral-24b`, `studio-gemma-4-12b`, `studio-gemma-4-26b-moe`, `studio-glm-4-6-vision`, `studio-ministral-14b`, `studio-nemotron-30b-omni`
-- **MBP** (`:8999`): `macbook-gemma-4-12b`, `macbook-gemma-4-31b`, `macbook-devstral-24b`, `macbook-nemotron-4b`, `macbook-smollm3-3b`
+```bash
+curl -s https://studio.taile85139.ts.net:9292/v1/models | python3 -c "import sys,json; print('\n'.join(m['id'] for m in json.load(sys.stdin)['data']))"
+```
+
+Chat models on the Studio (`:9292`) as of 2026-11-08: `ms-qwen3.6-35b-a3b`, `ms-qwen3-30b-a3b-2507`, `ms-qwen3-14b`, `ms-qwen3-coder-30b`, `ms-qwen3-vl-8b`, `ms-qwen3.5-4b-mtp`, `ms-qwythos-27b-v1`, `ms-devstral-24b`, `ms-kat-coder-v2.5`, `ms-laguna-xs-2.1`, `ms-lfm2.5-24b-qad`, `ms-lfm3-1.7b`, `ms-minicpm-v-4.7`, `ms-minicpm-v-4.7-hires`, `ms-ministral-3-3b`, `sushi`. The endpoint also serves embedding models (`ms-bge-*`) and audio/omni models (`ms-lfm3-audio-2b`, `ms-lfm3-omni-2b`), which aren't usable as agent LLMs.
+
+The MBP backend (`:8999`) wasn't running when this was checked, so its model list isn't recorded here.
 
 ## File layout
 
